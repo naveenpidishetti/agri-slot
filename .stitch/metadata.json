@@ -1,0 +1,26 @@
+{
+  "name": "projects/2369870970400891145",
+  "projectId": "2369870970400891145",
+  "title": "Agri-Slot Mobile App",
+  "visibility": "PRIVATE",
+  "projectType": "PROJECT_DESIGN",
+  "origin": "STITCH",
+  "deviceType": "MOBILE",
+  "designTheme": {
+    "colorMode": "DARK",
+    "font": "OUTFIT",
+    "roundness": "ROUND_EIGHT",
+    "customColor": "#22c55e"
+  },
+  "screens": {
+    "home": {
+      "id": "10458369292265833472",
+      "sourceScreen": "projects/2369870970400891145/screens/10458369292265833472",
+      "width": 390,
+      "height": 884
+    }
+  },
+  "metadata": {
+    "userRole": "OWNER"
+  }
+}

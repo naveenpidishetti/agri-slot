@@ -1,0 +1,966 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { api } from '../../services/api';
+import { ALL_INDIAN_STATES, getCentersForDistrict } from '../../data/indiaData';
+import { Crop, ProcurementCenter, Booking } from '../../types';
+import { AICaptionDisclaimer } from '../common/AICaptionDisclaimer';
+import confetti from 'canvas-confetti';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Sparkles,
+  AlertCircle,
+  CheckCircle2,
+  Calendar,
+  Clock,
+  MapPin,
+  Scale,
+  Mail,
+  Building2,
+  Info
+} from 'lucide-react';
+
+interface SlotBookingWizardProps {
+  onBack: () => void;
+  onBookingSuccess: (booking: Booking) => void;
+}
+
+const DEFAULT_CROPS: Crop[] = [
+  { id: 'crop-paddy', name: 'Paddy (వరి / Rice)', code: 'PAD-01', category: 'Cereal', msp_price_per_quintal: 2300, max_moisture_percent: 14.0 },
+  { id: 'crop-wheat', name: 'Wheat (గోధుమలు / Gehun)', code: 'WHT-02', category: 'Cereal', msp_price_per_quintal: 2275, max_moisture_percent: 12.0 },
+  { id: 'crop-cotton', name: 'Cotton (పత్తి / Kapas)', code: 'COT-04', category: 'Fiber', msp_price_per_quintal: 7020, max_moisture_percent: 8.0 },
+  { id: 'crop-maize', name: 'Maize (మొక్కజొన్న / Makka)', code: 'MAZ-03', category: 'Coarse Cereal', msp_price_per_quintal: 2090, max_moisture_percent: 14.0 },
+  { id: 'crop-chilli', name: 'Chilli (మిర్చి / Mirchi)', code: 'CHL-08', category: 'Spices', msp_price_per_quintal: 18200, max_moisture_percent: 10.0 },
+  { id: 'crop-turmeric', name: 'Turmeric (పసుపు / Haldi)', code: 'TUR-07', category: 'Spices', msp_price_per_quintal: 13500, max_moisture_percent: 10.0 },
+  { id: 'crop-soybean', name: 'Soybean (సోయాబీన్)', code: 'SOY-05', category: 'Oilseed', msp_price_per_quintal: 4892, max_moisture_percent: 10.0 },
+  { id: 'crop-groundnut', name: 'Groundnut (వేరుశనగ / పల్లీలు)', code: 'GND-09', category: 'Oilseed', msp_price_per_quintal: 6783, max_moisture_percent: 8.0 },
+  { id: 'crop-mustard', name: 'Mustard (ఆవాలు / Sarson)', code: 'MST-10', category: 'Oilseed', msp_price_per_quintal: 5650, max_moisture_percent: 8.0 },
+  { id: 'crop-onion', name: 'Onion (ఉల్లిపాయ / Pyaz)', code: 'ONN-19', category: 'Horticulture', msp_price_per_quintal: 2450, max_moisture_percent: 14.0 },
+  { id: 'crop-tomato', name: 'Tomato (టమోటా / Tamatar)', code: 'TMT-20', category: 'Horticulture', msp_price_per_quintal: 1850, max_moisture_percent: 14.0 },
+  { id: 'crop-potato', name: 'Potato (బంగాళాదుంప / Aloo)', code: 'POT-21', category: 'Horticulture', msp_price_per_quintal: 1650, max_moisture_percent: 14.0 },
+  { id: 'crop-sugarcane', name: 'Sugarcane (చెరకు / Ganna)', code: 'SGC-16', category: 'Commercial', msp_price_per_quintal: 340, max_moisture_percent: 18.0 }
+];
+
+export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, onBookingSuccess }) => {
+  const { user } = useAuth();
+  const { language, t } = useLanguage();
+  const tr: any = t;
+
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Data lists initialized with guaranteed default crops
+  const [crops, setCrops] = useState<Crop[]>(DEFAULT_CROPS);
+  const [centers, setCenters] = useState<ProcurementCenter[]>([]);
+  const [aiRec, setAiRec] = useState<any>(null);
+
+  // Wizard Selections
+  const [selectedCrop, setSelectedCrop] = useState<Crop | null>(null);
+  const [quantity, setQuantity] = useState<number>(40);
+  const [location, setLocation] = useState({
+    state: user?.state || 'Telangana',
+    district: user?.district || 'Warangal Urban',
+    village: user?.village || 'Warangal'
+  });
+  const [farmerEmail, setFarmerEmail] = useState<string>(user?.email || 'vasanthreddy302@gmail.com');
+  const [selectedCenter, setSelectedCenter] = useState<ProcurementCenter | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedSlot, setSelectedSlot] = useState<string>('11:00 AM – 11:30 AM');
+
+  // Slot Capacities (Capped at 3 slots per time window)
+  const [slotCapacities, setSlotCapacities] = useState<{
+    time: string;
+    maxSlots: number;
+    bookedCount: number;
+    availableSlots: number;
+    isFull: boolean;
+    isAiPick?: boolean;
+  }[]>([]);
+
+  useEffect(() => {
+    if (user?.email) {
+      setFarmerEmail(user.email);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  const loadInitialData = async () => {
+    try {
+      const cropsRes = await api.getCrops();
+      if (cropsRes?.crops && cropsRes.crops.length > 0) {
+        setCrops(cropsRes.crops);
+      }
+      loadCentersForDistrict(location.state, location.district);
+    } catch (err) {
+      console.error('Failed loading wizard data', err);
+      loadCentersForDistrict(location.state, location.district);
+    }
+  };
+
+  const loadCentersForDistrict = (stateName: string, districtName: string) => {
+    const districtCenters = getCentersForDistrict(stateName, districtName);
+    setCenters(districtCenters as any);
+    if (districtCenters.length > 0) {
+      setSelectedCenter(districtCenters[0] as any);
+    }
+  };
+
+  const handleStateChange = (stateName: string) => {
+    const stateObj = ALL_INDIAN_STATES.find(s => s.state === stateName);
+    const firstDistrict = stateObj?.districts[0] || 'District Hub';
+    setLocation({
+      ...location,
+      state: stateName,
+      district: firstDistrict
+    });
+    loadCentersForDistrict(stateName, firstDistrict);
+  };
+
+  const handleDistrictChange = (districtName: string) => {
+    setLocation({
+      ...location,
+      district: districtName
+    });
+    loadCentersForDistrict(location.state, districtName);
+  };
+
+  useEffect(() => {
+    if (selectedCenter?.id && selectedDate) {
+      loadCapacities(selectedCenter.id, selectedDate);
+    }
+  }, [selectedCenter?.id, selectedDate]);
+
+  const loadCapacities = async (centerId: string, date: string) => {
+    try {
+      const res = await api.getSlotCapacity(centerId, date);
+      if (res?.slots) {
+        setSlotCapacities(res.slots);
+        const currentSlotInfo = res.slots.find(s => s.time === selectedSlot);
+        if (currentSlotInfo && currentSlotInfo.isFull) {
+          const firstOpen = res.slots.find(s => !s.isFull);
+          if (firstOpen) setSelectedSlot(firstOpen.time);
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load dynamic slot capacity', e);
+    }
+  };
+
+  const handleFetchAiRecommendation = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const rec = await api.getSlotRecommendation({
+        cropId: selectedCrop?.id || 'crop-paddy',
+        quantityQuintals: quantity,
+        userLocation: `${location.village}, ${location.district}, ${location.state}`,
+        preferredDate: selectedDate,
+        state: location.state,
+        district: location.district
+      });
+      setAiRec(rec);
+      if (rec.recommendedCenter) {
+        setSelectedCenter(rec.recommendedCenter);
+      }
+      if (rec.recommendedSlot) {
+        setSelectedSlot(rec.recommendedSlot);
+      }
+      setStep(5);
+    } catch (err: any) {
+      setError(err.message || 'Could not fetch AI recommendation');
+      setStep(5);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmBooking = async () => {
+    if (!selectedCenter || !selectedCrop) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await api.createBooking({
+        center_id: selectedCenter.id,
+        crop_id: selectedCrop.id,
+        quantity_quintals: quantity,
+        booking_date: selectedDate,
+        slot_time: selectedSlot,
+        farmer_email: farmerEmail
+      });
+
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+
+      onBookingSuccess(res.booking);
+    } catch (err: any) {
+      setError(err.message || 'Booking submission failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const stepsList = [
+    { num: 1, title: tr.stepCrop || 'Select Crop' },
+    { num: 2, title: tr.stepQuantity || 'Quantity' },
+    { num: 3, title: tr.stepLocation || 'Location' },
+    { num: 4, title: tr.stepEmail || 'Email Alert' },
+    { num: 5, title: tr.stepCenter || 'Mandi Center' },
+    { num: 6, title: tr.stepSlot || 'Time Slot' },
+    { num: 7, title: tr.stepReview || 'Confirm' },
+  ];
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 pb-24 text-slate-900">
+
+      {/* Top Header */}
+      <div className="flex items-center justify-between gap-4">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-emerald-700 transition-colors cursor-pointer bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-xs"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>{tr.backToDashboard || 'Back to Dashboard'}</span>
+        </button>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+            {tr.step || 'Step'} {step} / 7
+          </span>
+        </div>
+      </div>
+
+      {/* Progress Bar & Steps Tabs */}
+      <div className="card-clean p-4 border border-emerald-200 shadow-xs bg-white">
+        <div className="hidden sm:flex items-center justify-between mb-3">
+          {stepsList.map((s) => (
+            <div
+              key={s.num}
+              onClick={() => {
+                if (s.num < step) setStep(s.num);
+              }}
+              className={`flex items-center gap-2 cursor-pointer transition-all ${
+                s.num === step
+                  ? 'text-emerald-700 font-extrabold scale-105'
+                  : s.num < step
+                  ? 'text-slate-700 font-semibold'
+                  : 'text-slate-400 font-medium'
+              }`}
+            >
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black ${
+                  s.num === step
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/30 ring-2 ring-emerald-300'
+                    : s.num < step
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    : 'bg-slate-100 text-slate-500'
+                }`}
+              >
+                {s.num < step ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : s.num}
+              </div>
+              <span className="text-xs">{s.title}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Mobile Linear Bar */}
+        <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+          <div
+            className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-300"
+            style={{ width: `${(step / 7) * 100}%` }}
+          />
+        </div>
+      </div>
+
+      {error && (
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center gap-3 text-xs font-semibold animate-shake">
+          <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-600" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* STEP 1: SELECT CROP */}
+      {/* ========================================================================= */}
+      {step === 1 && (
+        <div className="card-clean p-6 sm:p-8 space-y-6 border border-emerald-200 bg-white">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h2 className="text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
+                <span>🌾</span>
+                <span>{tr.selectCropTitle || 'Select Crop for Mandi Procurement'}</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-1 font-medium">
+                {tr.selectCropDesc || 'Choose the crop you want to sell at official MSP rates.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {crops.map((c) => {
+              const isSelected = selectedCrop?.id === c.id;
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => setSelectedCrop(c)}
+                  className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 relative ${
+                    isSelected
+                      ? 'border-emerald-600 bg-emerald-50/80 shadow-md shadow-emerald-500/10 scale-[1.02]'
+                      : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50/60'
+                  }`}
+                >
+                  {isSelected && (
+                    <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center">
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    </div>
+                  )}
+                  <div className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md inline-block mb-2">
+                    {c.category}
+                  </div>
+                  <h3 className="text-sm font-black text-slate-900 font-outfit">{c.name}</h3>
+                  <div className="mt-2 text-xs flex items-center justify-between text-slate-600 font-semibold">
+                    <span>MSP Rate:</span>
+                    <span className="text-emerald-700 font-extrabold text-sm">₹{c.msp_price_per_quintal} / Q</span>
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-1">
+                    Max Moisture: {c.max_moisture_percent}%
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+            <div className="text-xs text-slate-500 font-medium">
+              {selectedCrop ? (
+                <span className="text-emerald-700 font-bold">Selected: {selectedCrop.name}</span>
+              ) : (
+                <span className="text-amber-600 font-semibold">Please select a crop to proceed</span>
+              )}
+            </div>
+
+            <button
+              onClick={() => {
+                if (selectedCrop) setStep(2);
+                else setError('Please select a crop first');
+              }}
+              disabled={!selectedCrop}
+              className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20"
+            >
+              <span>{tr.continue || 'Continue'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* STEP 2: QUANTITY */}
+      {/* ========================================================================= */}
+      {step === 2 && (
+        <div className="card-clean p-6 sm:p-8 space-y-6 border border-emerald-200 bg-white">
+          <div>
+            <h2 className="text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
+              <span>⚖️</span>
+              <span>{tr.enterQuantityTitle || 'Enter Harvest Quantity (Quintals)'}</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-1 font-medium">
+              {selectedCrop?.name} • 1 Quintal = 100 kg
+            </p>
+          </div>
+
+          <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200 flex flex-col items-center justify-center space-y-4">
+            <div className="text-4xl sm:text-5xl font-black text-emerald-700 font-outfit">
+              {quantity} <span className="text-2xl text-slate-600 font-bold">Quintals</span>
+            </div>
+            <div className="text-xs font-semibold text-slate-500">
+              Total Weight: {(quantity * 100).toLocaleString('en-IN')} kg ({quantity * 2} standard 50kg bags)
+            </div>
+
+            {/* Quick Quantity Presets */}
+            <div className="flex items-center gap-2 flex-wrap justify-center pt-2">
+              {[20, 40, 60, 80, 100, 150, 200].map((q) => (
+                <button
+                  key={q}
+                  onClick={() => setQuantity(q)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    quantity === q
+                      ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-300'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  {q} Q
+                </button>
+              ))}
+            </div>
+
+            {/* Range Slider */}
+            <div className="w-full max-w-md pt-4">
+              <input
+                type="range"
+                min="5"
+                max="500"
+                step="5"
+                value={quantity}
+                onChange={(e) => setQuantity(parseInt(e.target.value) || 5)}
+                className="w-full accent-emerald-600 cursor-pointer"
+              />
+              <div className="flex justify-between text-[11px] text-slate-400 font-bold mt-1">
+                <span>5 Q</span>
+                <span>250 Q</span>
+                <span>500 Q</span>
+              </div>
+            </div>
+
+            {/* Direct Number Input */}
+            <div className="flex items-center gap-2 pt-2">
+              <label className="text-xs font-bold text-slate-600">Manual Entry:</label>
+              <input
+                type="number"
+                min="1"
+                max="1000"
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-24 px-3 py-1.5 rounded-xl border border-slate-300 text-center font-bold text-sm text-slate-900 bg-white"
+              />
+              <span className="text-xs font-bold text-slate-500">Quintals</span>
+            </div>
+          </div>
+
+          {/* MSP Estimated Value Summary */}
+          {selectedCrop && (
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-xs">
+                  ₹
+                </div>
+                <div>
+                  <div className="text-xs text-slate-600 font-semibold">Estimated MSP Payout</div>
+                  <div className="text-lg font-black text-emerald-800">
+                    ₹{((selectedCrop.msp_price_per_quintal || 0) * quantity).toLocaleString('en-IN')}
+                  </div>
+                </div>
+              </div>
+              <div className="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
+                @ ₹{selectedCrop.msp_price_per_quintal}/Q
+              </div>
+            </div>
+          )}
+
+          <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+            <button
+              onClick={() => setStep(1)}
+              className="px-5 py-2.5 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>{tr.back || 'Back'}</span>
+            </button>
+
+            <button
+              onClick={() => setStep(3)}
+              className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20"
+            >
+              <span>{tr.continue || 'Continue'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* STEP 3: LOCATION (STATE & DISTRICT) */}
+      {/* ========================================================================= */}
+      {step === 3 && (
+        <div className="card-clean p-6 sm:p-8 space-y-6 border border-emerald-200 bg-white">
+          <div>
+            <h2 className="text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
+              <span>📍</span>
+              <span>{tr.selectLocationTitle || 'Select Farm Location & District'}</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-1 font-medium">
+              We cover all 28 States and 8 Union Territories with official APMC / FCI procurement centers.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                State / Union Territory
+              </label>
+              <select
+                value={location.state}
+                onChange={(e) => handleStateChange(e.target.value)}
+                className="w-full p-3 rounded-xl border border-slate-300 font-bold text-sm bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer"
+              >
+                {ALL_INDIAN_STATES.map((s) => (
+                  <option key={s.state} value={s.state}>
+                    {s.state}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                District / Mandi Division
+              </label>
+              <select
+                value={location.district}
+                onChange={(e) => handleDistrictChange(e.target.value)}
+                className="w-full p-3 rounded-xl border border-slate-300 font-bold text-sm bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer"
+              >
+                {(ALL_INDIAN_STATES.find((s) => s.state === location.state)?.districts || ['District Hub']).map(
+                  (d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  )
+                )}
+              </select>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Village / Mandal / Town
+              </label>
+              <input
+                type="text"
+                value={location.village}
+                onChange={(e) => setLocation({ ...location, village: e.target.value })}
+                placeholder="e.g. Hasanparthy, Warangal"
+                className="w-full p-3 rounded-xl border border-slate-300 font-bold text-sm bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-xs text-blue-900 font-medium flex items-center gap-3">
+            <Info className="w-5 h-5 text-blue-600 flex-shrink-0" />
+            <span>
+              Found <strong>{centers.length}</strong> official procurement centers operating in <strong>{location.district}</strong>, {location.state}.
+            </span>
+          </div>
+
+          <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+            <button
+              onClick={() => setStep(2)}
+              className="px-5 py-2.5 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>{tr.back || 'Back'}</span>
+            </button>
+
+            <button
+              onClick={() => setStep(4)}
+              className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20"
+            >
+              <span>{tr.continue || 'Continue'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* STEP 4: FARMER EMAIL FOR TOKEN DISPATCH */}
+      {/* ========================================================================= */}
+      {step === 4 && (
+        <div className="card-clean p-6 sm:p-8 space-y-6 border border-emerald-200 bg-white">
+          <div>
+            <h2 className="text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
+              <span>📧</span>
+              <span>{tr.farmerEmailTitle || 'Digital QR Token & Email Confirmation'}</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-1 font-medium">
+              We send your official Mandi Gate Pass, QR Token & Schedule SMS to this email address.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Farmer Contact Email
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <input
+                  type="email"
+                  value={farmerEmail}
+                  onChange={(e) => setFarmerEmail(e.target.value)}
+                  placeholder="e.g. vasanthreddy302@gmail.com"
+                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-300 font-bold text-sm bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                />
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 font-medium space-y-1">
+              <div className="font-bold flex items-center gap-1.5 text-emerald-800">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Instant Delivery Highlights:</span>
+              </div>
+              <ul className="list-disc pl-5 space-y-0.5 text-emerald-800">
+                <li>Gate Entry QR Code Pass for zero-queue security check</li>
+                <li>Live Queue Position & Assigned Weighbridge Counter</li>
+                <li>Official Government MSP Settlement Receipt copy</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+            <button
+              onClick={() => setStep(3)}
+              className="px-5 py-2.5 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>{tr.back || 'Back'}</span>
+            </button>
+
+            <button
+              onClick={handleFetchAiRecommendation}
+              disabled={loading || !farmerEmail.trim()}
+              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white font-black text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20"
+            >
+              <Sparkles className="w-4 h-4 animate-spin-slow" />
+              <span>{loading ? 'Analyzing AI Recommendation...' : 'Get AI Mandi Match'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* STEP 5: PROCUREMENT CENTER SELECTION & AI RECOMMENDATION */}
+      {/* ========================================================================= */}
+      {step === 5 && (
+        <div className="card-clean p-6 sm:p-8 space-y-6 border border-emerald-200 bg-white">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h2 className="text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
+                <span>🏢</span>
+                <span>{tr.selectCenterTitle || 'Select APMC Procurement Center'}</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-1 font-medium">
+                {location.district}, {location.state}
+              </p>
+            </div>
+          </div>
+
+          {/* AI Recommendation Banner */}
+          {aiRec && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-300 flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                <Sparkles className="w-5 h-5 animate-spin-slow" />
+              </div>
+              <div className="text-xs">
+                <div className="font-extrabold text-emerald-900 flex items-center gap-2">
+                  <span>AI Optimal Mandi Match</span>
+                  <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full font-bold">
+                    Fastest Weighbridge
+                  </span>
+                </div>
+                <p className="text-slate-700 mt-1 font-medium">
+                  {aiRec.reason || `Recommended based on low congestion and proximity to ${location.village}.`}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Centers List */}
+          <div className="space-y-3">
+            {centers.map((c: any) => {
+              const isSelected = selectedCenter?.id === c.id;
+              const isAiPick = aiRec?.recommendedCenter?.id === c.id;
+
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => setSelectedCenter(c)}
+                  className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                    isSelected
+                      ? 'border-emerald-600 bg-emerald-50/80 shadow-md shadow-emerald-500/10'
+                      : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50/60'
+                  }`}
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-black text-slate-900 font-outfit">{c.name}</h3>
+                      {isAiPick && (
+                        <span className="text-[10px] font-extrabold bg-teal-100 text-teal-800 border border-teal-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" /> AI Pick
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-500 font-medium flex items-center gap-3">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        {c.location_area || location.district}
+                      </span>
+                      <span>•</span>
+                      <span>Capacity: {c.daily_capacity_quintals || 500} Q/day</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className="text-xs font-bold text-slate-700">Distance</div>
+                      <div className="text-xs font-black text-emerald-700">~{c.distance_km || 8.5} km</div>
+                    </div>
+
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                        isSelected ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-transparent'
+                      }`}
+                    >
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+            <button
+              onClick={() => setStep(4)}
+              className="px-5 py-2.5 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>{tr.back || 'Back'}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (selectedCenter) setStep(6);
+                else setError('Please select a center');
+              }}
+              disabled={!selectedCenter}
+              className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20"
+            >
+              <span>{tr.continue || 'Continue'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* STEP 6: DATE & TIME SLOT SELECTION (MAX 3 SLOTS CAP) */}
+      {/* ========================================================================= */}
+      {step === 6 && (
+        <div className="card-clean p-6 sm:p-8 space-y-6 border border-emerald-200 bg-white">
+          <div>
+            <h2 className="text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
+              <span>⏰</span>
+              <span>{tr.selectSlotTitle || 'Choose Date & Preferred Time Slot'}</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-1 font-medium">
+              Every 30-minute window has a strict limit of <strong>3 slots</strong> to eliminate truck congestion.
+            </p>
+          </div>
+
+          {/* Date Picker */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              Select Arrival Date
+            </label>
+            <input
+              type="date"
+              value={selectedDate}
+              min={new Date().toISOString().split('T')[0]}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full sm:w-64 p-3 rounded-xl border border-slate-300 font-bold text-sm bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer"
+            />
+          </div>
+
+          {/* Time Slots Grid */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-slate-700">
+              Available 30-Minute Windows ({selectedDate})
+            </label>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {(slotCapacities.length > 0
+                ? slotCapacities
+                : [
+                    { time: '09:00 AM – 09:30 AM', maxSlots: 3, bookedCount: 1, availableSlots: 2, isFull: false },
+                    { time: '09:30 AM – 10:00 AM', maxSlots: 3, bookedCount: 3, availableSlots: 0, isFull: true },
+                    { time: '10:00 AM – 10:30 AM', maxSlots: 3, bookedCount: 2, availableSlots: 1, isFull: false },
+                    { time: '10:30 AM – 11:00 AM', maxSlots: 3, bookedCount: 1, availableSlots: 2, isFull: false },
+                    { time: '11:00 AM – 11:30 AM', maxSlots: 3, bookedCount: 1, availableSlots: 2, isFull: false },
+                    { time: '11:30 AM – 12:00 PM', maxSlots: 3, bookedCount: 0, availableSlots: 3, isFull: false },
+                    { time: '02:00 PM – 02:30 PM', maxSlots: 3, bookedCount: 2, availableSlots: 1, isFull: false },
+                    { time: '02:30 PM – 03:00 PM', maxSlots: 3, bookedCount: 3, availableSlots: 0, isFull: true },
+                    { time: '03:00 PM – 03:30 PM', maxSlots: 3, bookedCount: 1, availableSlots: 2, isFull: false },
+                    { time: '03:30 PM – 04:00 PM', maxSlots: 3, bookedCount: 0, availableSlots: 3, isFull: false }
+                  ]
+              ).map((slotInfo) => {
+                const isSelected = selectedSlot === slotInfo.time;
+                const isFull = slotInfo.isFull;
+
+                return (
+                  <button
+                    key={slotInfo.time}
+                    type="button"
+                    disabled={isFull}
+                    onClick={() => setSelectedSlot(slotInfo.time)}
+                    className={`p-3.5 rounded-2xl border-2 text-left transition-all duration-200 flex items-center justify-between cursor-pointer ${
+                      isFull
+                        ? 'border-slate-200 bg-slate-100 opacity-60 cursor-not-allowed'
+                        : isSelected
+                        ? 'border-emerald-600 bg-emerald-50 shadow-md shadow-emerald-500/10 ring-2 ring-emerald-300'
+                        : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div>
+                      <div className="text-xs font-black text-slate-900 font-outfit flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-slate-500" />
+                        <span>{slotInfo.time}</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">
+                        {isFull ? (
+                          <span className="text-rose-600 font-bold">Full (3/3 Booked)</span>
+                        ) : (
+                          <span className="text-emerald-700 font-semibold">
+                            {slotInfo.availableSlots} of {slotInfo.maxSlots} spots available
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div
+                      className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                        isFull
+                          ? 'bg-rose-100 text-rose-700'
+                          : isSelected
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-slate-100 text-slate-400'
+                      }`}
+                    >
+                      {isFull ? '✕' : isSelected ? '✓' : ''}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+            <button
+              onClick={() => setStep(5)}
+              className="px-5 py-2.5 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>{tr.back || 'Back'}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (selectedSlot) setStep(7);
+                else setError('Please select a time slot');
+              }}
+              disabled={!selectedSlot}
+              className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20"
+            >
+              <span>{tr.continue || 'Continue'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* STEP 7: REVIEW & CONFIRM BOOKING */}
+      {/* ========================================================================= */}
+      {step === 7 && (
+        <div className="card-clean p-6 sm:p-8 space-y-6 border border-emerald-200 bg-white">
+          <div>
+            <h2 className="text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
+              <span>📋</span>
+              <span>{tr.reviewTitle || 'Review & Confirm Slot Booking'}</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-1 font-medium">
+              Please verify your appointment summary before final submission.
+            </p>
+          </div>
+
+          {/* Booking Summary Card */}
+          <div className="p-5 rounded-3xl bg-slate-50 border border-slate-200 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              
+              <div className="p-3.5 rounded-2xl bg-white border border-slate-200">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Crop Details</div>
+                <div className="text-sm font-black text-slate-900 mt-0.5">{selectedCrop?.name}</div>
+                <div className="text-xs font-semibold text-emerald-700 mt-0.5">
+                  MSP: ₹{selectedCrop?.msp_price_per_quintal} / Q
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-white border border-slate-200">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Quantity & Value</div>
+                <div className="text-sm font-black text-slate-900 mt-0.5">{quantity} Quintals ({(quantity * 100).toLocaleString('en-IN')} kg)</div>
+                <div className="text-xs font-black text-emerald-700 mt-0.5">
+                  Total MSP: ₹{((selectedCrop?.msp_price_per_quintal || 0) * quantity).toLocaleString('en-IN')}
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-white border border-slate-200">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Mandi Procurement Center</div>
+                <div className="text-sm font-black text-slate-900 mt-0.5">{selectedCenter?.name}</div>
+                <div className="text-xs font-medium text-slate-500 mt-0.5">
+                  {location.village}, {location.district}, {location.state}
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-white border border-slate-200">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Date & Time Slot</div>
+                <div className="text-sm font-black text-slate-900 mt-0.5">{selectedDate}</div>
+                <div className="text-xs font-bold text-emerald-700 mt-0.5">{selectedSlot}</div>
+              </div>
+
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-emerald-100/70 border border-emerald-300 text-xs text-emerald-900 font-bold flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-emerald-700" />
+                <span>QR Token Sent To: {farmerEmail}</span>
+              </div>
+              <span className="text-[10px] bg-emerald-800 text-white px-2 py-0.5 rounded-md">SMS + Email</span>
+            </div>
+          </div>
+
+          <AICaptionDisclaimer />
+
+          <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+            <button
+              onClick={() => setStep(6)}
+              className="px-5 py-2.5 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>{tr.back || 'Back'}</span>
+            </button>
+
+            <button
+              onClick={handleConfirmBooking}
+              disabled={loading}
+              className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white font-black text-sm flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/30 hover:scale-105 transition-all"
+            >
+              <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
+              <span>{loading ? 'Confirming & Generating QR Token...' : 'Confirm & Generate Digital Token'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+};
