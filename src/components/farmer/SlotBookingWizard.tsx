@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { api } from '../../services/api';
@@ -19,7 +19,14 @@ import {
   Scale,
   Mail,
   Building2,
-  Info
+  Info,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  Bot,
+  RotateCcw,
+  Radio
 } from 'lucide-react';
 
 interface SlotBookingWizardProps {
@@ -52,7 +59,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Data lists initialized with guaranteed default crops
+  // Data lists
   const [crops, setCrops] = useState<Crop[]>(DEFAULT_CROPS);
   const [centers, setCenters] = useState<ProcurementCenter[]>([]);
   const [aiRec, setAiRec] = useState<any>(null);
@@ -70,7 +77,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [selectedSlot, setSelectedSlot] = useState<string>('11:00 AM – 11:30 AM');
 
-  // Slot Capacities (Capped at 3 slots per time window)
+  // Slot Capacities (Capped at 3 slots per window)
   const [slotCapacities, setSlotCapacities] = useState<{
     time: string;
     maxSlots: number;
@@ -80,12 +87,50 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
     isAiPick?: boolean;
   }[]>([]);
 
+  // =========================================================================
+  // 🎙️ VOICE ASSISTANT STATE & REFS
+  // =========================================================================
+  const [isVoiceActive, setIsVoiceActive] = useState<boolean>(true);
+  const [isListening, setIsListening] = useState<boolean>(false);
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [voiceTranscript, setVoiceTranscript] = useState<string>('');
+  const [voiceFeedback, setVoiceFeedback] = useState<string>('Voice Assistant Active. Speak your choices anytime.');
+
+  const stepRef = useRef(step);
+  const cropsRef = useRef(crops);
+  const selectedCropRef = useRef(selectedCrop);
+  const quantityRef = useRef(quantity);
+  const locationRef = useRef(location);
+  const centersRef = useRef(centers);
+  const selectedCenterRef = useRef(selectedCenter);
+  const selectedDateRef = useRef(selectedDate);
+  const selectedSlotRef = useRef(selectedSlot);
+  const isVoiceActiveRef = useRef(isVoiceActive);
+  const isSpeakingRef = useRef(isSpeaking);
+  const languageRef = useRef(language);
+  const recognitionRef = useRef<any>(null);
+  const isProcessingVoiceRef = useRef<boolean>(false);
+
+  useEffect(() => { stepRef.current = step; }, [step]);
+  useEffect(() => { cropsRef.current = crops; }, [crops]);
+  useEffect(() => { selectedCropRef.current = selectedCrop; }, [selectedCrop]);
+  useEffect(() => { quantityRef.current = quantity; }, [quantity]);
+  useEffect(() => { locationRef.current = location; }, [location]);
+  useEffect(() => { centersRef.current = centers; }, [centers]);
+  useEffect(() => { selectedCenterRef.current = selectedCenter; }, [selectedCenter]);
+  useEffect(() => { selectedDateRef.current = selectedDate; }, [selectedDate]);
+  useEffect(() => { selectedSlotRef.current = selectedSlot; }, [selectedSlot]);
+  useEffect(() => { isVoiceActiveRef.current = isVoiceActive; }, [isVoiceActive]);
+  useEffect(() => { isSpeakingRef.current = isSpeaking; }, [isSpeaking]);
+  useEffect(() => { languageRef.current = language; }, [language]);
+
   useEffect(() => {
     if (user?.email) {
       setFarmerEmail(user.email);
     }
   }, [user]);
 
+  // Load Initial Data
   useEffect(() => {
     loadInitialData();
   }, []);
@@ -152,6 +197,403 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
     }
   };
 
+  // =========================================================================
+  // 🔊 SPEECH SYNTHESIS (TTS)
+  // =========================================================================
+  const stopSpeech = useCallback(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+  }, []);
+
+  const speakText = useCallback((text: string, onEndCallback?: () => void) => {
+    if (!isVoiceActiveRef.current || !('speechSynthesis' in window)) return;
+    
+    stopSpeech();
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Choose appropriate locale
+    if (languageRef.current === 'te') {
+      utterance.lang = 'te-IN';
+    } else if (languageRef.current === 'hi') {
+      utterance.lang = 'hi-IN';
+    } else {
+      utterance.lang = 'en-IN';
+    }
+    
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+    };
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      if (onEndCallback) onEndCallback();
+      // Resume listening after speaking ends
+      startListening();
+    };
+
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+      startListening();
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }, [stopSpeech]);
+
+  // =========================================================================
+  // 🎙️ STEP VOICE PROMPT ANNOUNCER
+  // =========================================================================
+  const triggerStepVoicePrompt = useCallback((stepNumber: number) => {
+    if (!isVoiceActiveRef.current) return;
+
+    let text = '';
+    const lang = languageRef.current;
+
+    switch (stepNumber) {
+      case 1:
+        text = lang === 'te'
+          ? 'నమస్కారం! పంటల స్లాట్ బుకింగ్‌కు స్వాగతం. మీరు ఏ పంట విక్రయించాలనుకుంటున్నారు? వరి, పత్తి, గోధుమలు, మిర్చి లేదా పసుపు అని చెప్పండి.'
+          : lang === 'hi'
+          ? 'नमस्ते! मंडी स्लॉट बुकिंग में आपका स्वागत है। आप कौन सी फसल बेचना चाहते हैं? कृपया धान, कपास, गेहूं, मक्का या मिर्च बोलें।'
+          : 'Welcome to Mandi Slot Booking. Which crop would you like to sell? You can say Paddy, Cotton, Wheat, Maize, Chilli, or Turmeric.';
+        break;
+
+      case 2:
+        text = lang === 'te'
+          ? `ఎంచుకున్న పంట ${selectedCropRef.current?.name || 'వరి'}. దయచేసి మీ పంట పరిమాణాన్ని క్వింటాళ్లలో చెప్పండి. ఉదాహరణకు 50 క్వింటాళ్లు లేదా 100 క్వింటాళ్లు.`
+          : lang === 'hi'
+          ? `चुनी गई फसल ${selectedCropRef.current?.name || 'धान'} है। कृपया अपनी फसल की मात्रा क्विंटल में बताएं, जैसे 50 क्विंटल या 100 क्विंटल।`
+          : `Selected crop is ${selectedCropRef.current?.name || 'Paddy'}. Please speak your harvest quantity in quintals, for example 50 quintals or 100 quintals.`;
+        break;
+
+      case 3:
+        text = lang === 'te'
+          ? `మీ ఫారమ్ స్థానం ${locationRef.current.district}, ${locationRef.current.state}. కొనసాగించడానికి నెక్స్ట్ అని చెప్పండి.`
+          : lang === 'hi'
+          ? `आपका जिला ${locationRef.current.district}, ${locationRef.current.state} है। आगे बढ़ने के लिए नेक्स्ट बोलें।`
+          : `Your farm location is set to ${locationRef.current.district}, ${locationRef.current.state}. Say Next to continue.`;
+        break;
+
+      case 4:
+        text = lang === 'te'
+          ? 'మీ డిజిటల్ గేట్ పాస్ టోకెన్ మీ ఈమెయిల్‌కు పంపబడుతుంది. AI సిఫార్సు కోసం నెక్స్ట్ అని చెప్పండి.'
+          : lang === 'hi'
+          ? 'आपका डिजिटल गेट पास टोकन आपके ईमेल पर भेजा जाएगा। एआई मंडी सुझाव के लिए नेक्स्ट बोलें।'
+          : 'Your digital QR gate pass will be sent to your email. Say Next to get AI Mandi recommendation.';
+        break;
+
+      case 5:
+        text = lang === 'te'
+          ? `మేము సిఫార్సు చేస్తున్న మార్కెట్ కేంద్రం ${selectedCenterRef.current?.name || 'APMC సెంటర్'}. స్లాట్ ఎంపికకు నెక్స్ట్ అని చెప్పండి.`
+          : lang === 'hi'
+          ? `अनुशंसित मंडी केंद्र ${selectedCenterRef.current?.name || 'एपीएमसी केंद्र'} है। स्लॉट चुनने के लिए नेक्स्ट बोलें।`
+          : `We recommend ${selectedCenterRef.current?.name || 'APMC Procurement Center'}. Say Next to choose your arrival time slot.`;
+        break;
+
+      case 6:
+        text = lang === 'te'
+          ? `తేదీ ${selectedDateRef.current}. అందుబాటులో ఉన్న సమయ స్లాట్ ${selectedSlotRef.current}. కొనసాగించడానికి కన్ఫర్మ్ స్లాట్ లేదా నెక్స్ట్ అని చెప్పండి.`
+          : lang === 'hi'
+          ? `तारीख ${selectedDateRef.current} है। उपलब्ध समय स्लॉट ${selectedSlotRef.current} है। आगे बढ़ने के लिए नेक्स्ट बोलें।`
+          : `Arrival date is ${selectedDateRef.current}. Selected slot is ${selectedSlotRef.current}. Say Next or Confirm to review.`;
+        break;
+
+      case 7:
+        text = lang === 'te'
+          ? `దయచేసి మీ బుకింగ్ వివరాలు సరిచూసుకోండి. ${selectedCropRef.current?.name}, ${quantityRef.current} క్వింటాళ్లు. టోకెన్ పొందడానికి కన్ఫర్మ్ బుకింగ్ అని చెప్పండి.`
+          : lang === 'hi'
+          ? `कृपया अपनी बुकिंग जांचें। ${selectedCropRef.current?.name}, ${quantityRef.current} क्विंटल। टोकन बनाने के लिए कन्फर्म बुकिंग बोलें।`
+          : `Please review your booking details: ${selectedCropRef.current?.name}, ${quantityRef.current} Quintals. Say Confirm Booking to generate your token.`;
+        break;
+
+      default:
+        break;
+    }
+
+    setVoiceFeedback(text);
+    speakText(text);
+  }, [speakText]);
+
+  // Announce when step changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      triggerStepVoicePrompt(step);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [step, triggerStepVoicePrompt]);
+
+  // =========================================================================
+  // 🧠 VOICE COMMAND PROCESSOR & MATCHING
+  // =========================================================================
+  const handleVoiceCommand = useCallback((rawTranscript: string) => {
+    const text = rawTranscript.toLowerCase().trim();
+    if (!text || isProcessingVoiceRef.current) return;
+
+    setVoiceTranscript(rawTranscript);
+
+    // Global Navigation Commands
+    if (text.includes('next') || text.includes('continue') || text.includes('proceed') || text.includes('తర్వాత') || text.includes('ముందుకు') || text.includes('आगे') || text.includes('సరే')) {
+      const current = stepRef.current;
+      if (current === 1 && selectedCropRef.current) {
+        setStep(2);
+      } else if (current === 2) {
+        setStep(3);
+      } else if (current === 3) {
+        setStep(4);
+      } else if (current === 4) {
+        handleFetchAiRecommendation();
+      } else if (current === 5 && selectedCenterRef.current) {
+        setStep(6);
+      } else if (current === 6 && selectedSlotRef.current) {
+        setStep(7);
+      } else if (current === 7) {
+        handleConfirmBooking();
+      }
+      return;
+    }
+
+    if (text.includes('back') || text.includes('previous') || text.includes('వెనుకకు') || text.includes('పీచే')) {
+      setStep(prev => Math.max(1, prev - 1));
+      return;
+    }
+
+    if (text.includes('repeat') || text.includes('again') || text.includes('మళ్లీ చెప్పు') || text.includes('ఫిర్ సే')) {
+      triggerStepVoicePrompt(stepRef.current);
+      return;
+    }
+
+    // Step-Specific Matching
+    const currentStep = stepRef.current;
+
+    // --- STEP 1: CROP MATCHING ---
+    if (currentStep === 1) {
+      const cropList = cropsRef.current;
+      let matchedCrop: Crop | null = null;
+
+      if (text.includes('paddy') || text.includes('rice') || text.includes('వరి') || text.includes('dhan') || text.includes('వరి పంట') || text.includes('ధాన్యం')) {
+        matchedCrop = cropList.find(c => c.id === 'crop-paddy') || cropList[0];
+      } else if (text.includes('cotton') || text.includes('పత్తి') || text.includes('kapas')) {
+        matchedCrop = cropList.find(c => c.id === 'crop-cotton') || null;
+      } else if (text.includes('wheat') || text.includes('గోధుమ') || text.includes('gehun')) {
+        matchedCrop = cropList.find(c => c.id === 'crop-wheat') || null;
+      } else if (text.includes('maize') || text.includes('corn') || text.includes('మొక్కజొన్న') || text.includes('makka')) {
+        matchedCrop = cropList.find(c => c.id === 'crop-maize') || null;
+      } else if (text.includes('chilli') || text.includes('mirchi') || text.includes('మిర్చి')) {
+        matchedCrop = cropList.find(c => c.id === 'crop-chilli') || null;
+      } else if (text.includes('turmeric') || text.includes('పసుపు') || text.includes('haldi')) {
+        matchedCrop = cropList.find(c => c.id === 'crop-turmeric') || null;
+      } else if (text.includes('soybean') || text.includes('సోయా')) {
+        matchedCrop = cropList.find(c => c.id === 'crop-soybean') || null;
+      } else if (text.includes('groundnut') || text.includes('peanut') || text.includes('వేరుశనగ') || text.includes('పల్లీలు')) {
+        matchedCrop = cropList.find(c => c.id === 'crop-groundnut') || null;
+      } else if (text.includes('mustard') || text.includes('ఆవాలు') || text.includes('sarson')) {
+        matchedCrop = cropList.find(c => c.id === 'crop-mustard') || null;
+      } else if (text.includes('onion') || text.includes('ఉల్లిపాయ') || text.includes('pyaz')) {
+        matchedCrop = cropList.find(c => c.id === 'crop-onion') || null;
+      } else if (text.includes('tomato') || text.includes('టమోటా') || text.includes('tamatar')) {
+        matchedCrop = cropList.find(c => c.id === 'crop-tomato') || null;
+      } else if (text.includes('potato') || text.includes('బంగాళాదుంప') || text.includes('aloo')) {
+        matchedCrop = cropList.find(c => c.id === 'crop-potato') || null;
+      } else if (text.includes('sugarcane') || text.includes('చెరకు') || text.includes('ganna')) {
+        matchedCrop = cropList.find(c => c.id === 'crop-sugarcane') || null;
+      }
+
+      if (matchedCrop) {
+        setSelectedCrop(matchedCrop);
+        setVoiceFeedback(`Selected ${matchedCrop.name}`);
+        speakText(`Selected ${matchedCrop.name}. Moving to quantity step.`, () => {
+          setStep(2);
+        });
+      }
+      return;
+    }
+
+    // --- STEP 2: QUANTITY EXTRACTION ---
+    if (currentStep === 2) {
+      // Extract numbers like "50 quintals", "100", "వంద", "యాభై"
+      let parsedNum: number | null = null;
+      const numMatch = text.match(/\d+/);
+
+      if (numMatch) {
+        parsedNum = parseInt(numMatch[0], 10);
+      } else if (text.includes('hundred') || text.includes('వంద') || text.includes('सौ')) {
+        parsedNum = 100;
+      } else if (text.includes('fifty') || text.includes('యాభై') || text.includes('पचास')) {
+        parsedNum = 50;
+      } else if (text.includes('twenty') || text.includes('ఇరవై') || text.includes('बीस')) {
+        parsedNum = 20;
+      } else if (text.includes('forty') || text.includes('నలభై') || text.includes('चालीस')) {
+        parsedNum = 40;
+      } else if (text.includes('sixty') || text.includes('అరవై') || text.includes('साठ')) {
+        parsedNum = 60;
+      } else if (text.includes('eighty') || text.includes('ఎనభై') || text.includes('अस्सी')) {
+        parsedNum = 80;
+      } else if (text.includes('two hundred') || text.includes('రెండు వందలు') || text.includes('दो सौ')) {
+        parsedNum = 200;
+      }
+
+      if (parsedNum && parsedNum > 0 && parsedNum <= 1000) {
+        setQuantity(parsedNum);
+        setVoiceFeedback(`Set quantity to ${parsedNum} Quintals`);
+        speakText(`${parsedNum} Quintals confirmed. Moving to location details.`, () => {
+          setStep(3);
+        });
+      }
+      return;
+    }
+
+    // --- STEP 3: LOCATION ---
+    if (currentStep === 3) {
+      if (text.includes('next') || text.includes('ok') || text.includes('confirm') || text.includes('సరే')) {
+        setStep(4);
+      }
+      return;
+    }
+
+    // --- STEP 4: EMAIL ---
+    if (currentStep === 4) {
+      if (text.includes('next') || text.includes('send') || text.includes('ai') || text.includes('match') || text.includes('సరే')) {
+        handleFetchAiRecommendation();
+      }
+      return;
+    }
+
+    // --- STEP 5: CENTER SELECTION ---
+    if (currentStep === 5) {
+      if (text.includes('first') || text.includes('recommended') || text.includes('select') || text.includes('center') || text.includes('warangal') || text.includes('సరే')) {
+        if (centersRef.current.length > 0) {
+          setSelectedCenter(centersRef.current[0]);
+          speakText(`Selected ${centersRef.current[0].name}. Moving to time slot.`, () => {
+            setStep(6);
+          });
+        }
+      }
+      return;
+    }
+
+    // --- STEP 6: TIME SLOT SELECTION ---
+    if (currentStep === 6) {
+      if (text.includes('morning') || text.includes('11') || text.includes('10') || text.includes('slot') || text.includes('confirm') || text.includes('next')) {
+        speakText(`Selected slot ${selectedSlotRef.current}. Moving to confirmation.`, () => {
+          setStep(7);
+        });
+      }
+      return;
+    }
+
+    // --- STEP 7: CONFIRM BOOKING ---
+    if (currentStep === 7) {
+      if (text.includes('confirm') || text.includes('book') || text.includes('yes') || text.includes('submit') || text.includes('ఖరారు') || text.includes('బుక్')) {
+        handleConfirmBooking();
+      }
+      return;
+    }
+  }, [speakText]);
+
+  // =========================================================================
+  // 🎙️ WEB SPEECH RECOGNITION (STT) LIFECYCLE
+  // =========================================================================
+  const startListening = useCallback(() => {
+    if (!isVoiceActiveRef.current || isSpeakingRef.current) return;
+
+    const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRec) {
+      console.warn('Speech Recognition not supported in this browser.');
+      return;
+    }
+
+    try {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+
+      const recognition = new SpeechRec();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      if (languageRef.current === 'te') {
+        recognition.lang = 'te-IN';
+      } else if (languageRef.current === 'hi') {
+        recognition.lang = 'hi-IN';
+      } else {
+        recognition.lang = 'en-IN';
+      }
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+
+        const spoken = (finalTranscript || interimTranscript).trim();
+        if (spoken) {
+          setVoiceTranscript(spoken);
+          if (finalTranscript) {
+            handleVoiceCommand(finalTranscript);
+          }
+        }
+      };
+
+      recognition.onerror = (e: any) => {
+        if (e.error !== 'no-speech') {
+          console.warn('Speech recognition error:', e.error);
+        }
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+        // Automatically restart if voice is still active and not speaking
+        if (isVoiceActiveRef.current && !isSpeakingRef.current) {
+          setTimeout(() => {
+            try {
+              recognition.start();
+            } catch (err) {
+              // Ignore restart error
+            }
+          }, 300);
+        }
+      };
+
+      recognition.start();
+      recognitionRef.current = recognition;
+    } catch (e) {
+      console.warn('Could not initialize SpeechRecognition', e);
+    }
+  }, [handleVoiceCommand]);
+
+  useEffect(() => {
+    if (isVoiceActive) {
+      startListening();
+    } else {
+      if (recognitionRef.current) recognitionRef.current.abort();
+      stopSpeech();
+      setIsListening(false);
+    }
+
+    return () => {
+      if (recognitionRef.current) recognitionRef.current.abort();
+      stopSpeech();
+    };
+  }, [isVoiceActive, startListening, stopSpeech]);
+
+  // =========================================================================
+  // ACTIONS: AI RECOMMENDATION & CONFIRM BOOKING
+  // =========================================================================
   const handleFetchAiRecommendation = async () => {
     setLoading(true);
     setError(null);
@@ -196,11 +638,12 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
       });
 
       confetti({
-        particleCount: 80,
-        spread: 70,
+        particleCount: 100,
+        spread: 80,
         origin: { y: 0.6 }
       });
 
+      speakText('Congratulations! Your Mandi slot is confirmed and your QR Token Pass has been generated.');
       onBookingSuccess(res.booking);
     } catch (err: any) {
       setError(err.message || 'Booking submission failed. Please try again.');
@@ -225,7 +668,10 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
       {/* Top Header */}
       <div className="flex items-center justify-between gap-4">
         <button
-          onClick={onBack}
+          onClick={() => {
+            stopSpeech();
+            onBack();
+          }}
           className="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-emerald-700 transition-colors cursor-pointer bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-xs"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -233,11 +679,125 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
         </button>
 
         <div className="flex items-center gap-2">
+          {/* Voice Assistant Toggle Button */}
+          <button
+            onClick={() => {
+              const nextState = !isVoiceActive;
+              setIsVoiceActive(nextState);
+              if (!nextState) stopSpeech();
+            }}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer shadow-xs ${
+              isVoiceActive
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-emerald-500/20'
+                : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
+            }`}
+          >
+            {isVoiceActive ? (
+              <>
+                <Volume2 className="w-3.5 h-3.5 animate-pulse" />
+                <span>Voice Active</span>
+              </>
+            ) : (
+              <>
+                <VolumeX className="w-3.5 h-3.5 text-slate-400" />
+                <span>Voice Muted</span>
+              </>
+            )}
+          </button>
+
           <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
             {tr.step || 'Step'} {step} / 7
           </span>
         </div>
       </div>
+
+      {/* 🎙️ LIVE VOICE ASSISTANT INTERACTIVE STATUS BANNER */}
+      {isVoiceActive && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-emerald-900 via-slate-900 to-teal-950 text-white border-2 border-emerald-500/40 shadow-xl shadow-emerald-950/20 relative overflow-hidden animate-in fade-in duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
+            
+            <div className="flex items-center gap-3.5">
+              <div className="relative">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-white shadow-md transition-all ${
+                  isSpeaking
+                    ? 'bg-gradient-to-tr from-teal-500 to-emerald-400 scale-105 ring-4 ring-emerald-400/40 animate-pulse'
+                    : isListening
+                    ? 'bg-gradient-to-tr from-emerald-600 to-teal-600 ring-2 ring-emerald-300'
+                    : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {isSpeaking ? (
+                    <Volume2 className="w-6 h-6 animate-bounce" />
+                  ) : isListening ? (
+                    <Mic className="w-6 h-6 text-white animate-pulse" />
+                  ) : (
+                    <Bot className="w-6 h-6" />
+                  )}
+                </div>
+                {isListening && (
+                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 ring-2 ring-slate-900 animate-ping" />
+                )}
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
+                    <Radio className="w-3.5 h-3.5 text-emerald-400 animate-spin-slow" />
+                    Kisan Voice Assistant (మొత్తం వాయిస్ అసిస్టెంట్)
+                  </span>
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                    isSpeaking
+                      ? 'bg-teal-500/30 text-teal-200 border border-teal-400/40'
+                      : isListening
+                      ? 'bg-emerald-500/30 text-emerald-200 border border-emerald-400/40'
+                      : 'bg-slate-800 text-slate-400'
+                  }`}>
+                    {isSpeaking ? '🗣️ Speaking Prompt...' : isListening ? '🎙️ Listening to You...' : 'Idle'}
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-200 font-medium mt-1 line-clamp-2 max-w-xl">
+                  {voiceTranscript ? `🎙️ You said: "${voiceTranscript}"` : voiceFeedback}
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Actions for Voice */}
+            <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-center">
+              <button
+                onClick={() => triggerStepVoicePrompt(step)}
+                title="Repeat step instructions"
+                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-emerald-200 text-xs font-bold border border-white/10 flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Repeat</span>
+              </button>
+
+              <button
+                onClick={stopSpeech}
+                title="Stop current voice audio"
+                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-bold border border-white/10 flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <VolumeX className="w-3.5 h-3.5" />
+                <span>Mute</span>
+              </button>
+            </div>
+
+          </div>
+
+          {/* Soundwave animation strip */}
+          <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-300">
+            <span className="font-semibold text-emerald-300">
+              💡 {step === 1 ? 'Say crop name: "Paddy", "Cotton", "Wheat", "వరి"' : step === 2 ? 'Say quantity: "50 Quintals", "100", "వంద"' : step === 7 ? 'Say: "Confirm Booking" or "ఖరారు చేయండి"' : 'Say: "Next", "Back", or "Continue"'}
+            </span>
+            <div className="flex items-center gap-1 h-3">
+              <span className={`w-1 bg-emerald-400 rounded-full transition-all ${isSpeaking || isListening ? 'h-3 animate-pulse' : 'h-1'}`} />
+              <span className={`w-1 bg-teal-400 rounded-full transition-all ${isSpeaking || isListening ? 'h-4 animate-bounce' : 'h-1'}`} />
+              <span className={`w-1 bg-emerald-300 rounded-full transition-all ${isSpeaking || isListening ? 'h-2 animate-pulse' : 'h-1'}`} />
+              <span className={`w-1 bg-teal-300 rounded-full transition-all ${isSpeaking || isListening ? 'h-3.5 animate-bounce' : 'h-1'}`} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Progress Bar & Steps Tabs */}
       <div className="card-clean p-4 border border-emerald-200 shadow-xs bg-white">
@@ -300,8 +860,22 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
                 <span>{tr.selectCropTitle || 'Select Crop for Mandi Procurement'}</span>
               </h2>
               <p className="text-xs text-slate-500 mt-1 font-medium">
-                {tr.selectCropDesc || 'Choose the crop you want to sell at official MSP rates.'}
+                {tr.selectCropDesc || 'Choose or speak the crop you want to sell at official MSP rates.'}
               </p>
+            </div>
+
+            {/* Quick voice hint chips */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {['Paddy (వరి)', 'Cotton (పత్తి)', 'Wheat (గోధుమలు)', 'Maize (మొక్కజొన్న)'].map((cHint) => (
+                <button
+                  key={cHint}
+                  onClick={() => handleVoiceCommand(cHint.split(' ')[0])}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold hover:bg-emerald-100 transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <Mic className="w-3 h-3 text-emerald-600" />
+                  <span>{cHint}</span>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -311,7 +885,12 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
               return (
                 <div
                   key={c.id}
-                  onClick={() => setSelectedCrop(c)}
+                  onClick={() => {
+                    setSelectedCrop(c);
+                    speakText(`Selected ${c.name}. Moving to quantity step.`, () => {
+                      setStep(2);
+                    });
+                  }}
                   className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 relative ${
                     isSelected
                       ? 'border-emerald-600 bg-emerald-50/80 shadow-md shadow-emerald-500/10 scale-[1.02]'
@@ -344,7 +923,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
               {selectedCrop ? (
                 <span className="text-emerald-700 font-bold">Selected: {selectedCrop.name}</span>
               ) : (
-                <span className="text-amber-600 font-semibold">Please select a crop to proceed</span>
+                <span className="text-amber-600 font-semibold">Speak or click a crop to proceed</span>
               )}
             </div>
 
@@ -368,14 +947,29 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
       {/* ========================================================================= */}
       {step === 2 && (
         <div className="card-clean p-6 sm:p-8 space-y-6 border border-emerald-200 bg-white">
-          <div>
-            <h2 className="text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
-              <span>⚖️</span>
-              <span>{tr.enterQuantityTitle || 'Enter Harvest Quantity (Quintals)'}</span>
-            </h2>
-            <p className="text-xs text-slate-500 mt-1 font-medium">
-              {selectedCrop?.name} • 1 Quintal = 100 kg
-            </p>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h2 className="text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
+                <span>⚖️</span>
+                <span>{tr.enterQuantityTitle || 'Enter Harvest Quantity (Quintals)'}</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-1 font-medium">
+                {selectedCrop?.name} • 1 Quintal = 100 kg • Speak e.g. "50 Quintals" or "100"
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {[50, 100, 200].map((qHint) => (
+                <button
+                  key={qHint}
+                  onClick={() => handleVoiceCommand(`${qHint} quintals`)}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold hover:bg-emerald-100 transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <Mic className="w-3 h-3 text-emerald-600" />
+                  <span>{qHint} Q</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200 flex flex-col items-center justify-center space-y-4">
@@ -391,7 +985,10 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
               {[20, 40, 60, 80, 100, 150, 200].map((q) => (
                 <button
                   key={q}
-                  onClick={() => setQuantity(q)}
+                  onClick={() => {
+                    setQuantity(q);
+                    speakText(`${q} Quintals selected.`);
+                  }}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     quantity === q
                       ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-300'
@@ -545,7 +1142,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
           <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-xs text-blue-900 font-medium flex items-center gap-3">
             <Info className="w-5 h-5 text-blue-600 flex-shrink-0" />
             <span>
-              Found <strong>{centers.length}</strong> official procurement centers operating in <strong>{location.district}</strong>, {location.state}.
+              Found <strong>{centers.length}</strong> official procurement centers operating in <strong>{location.district}</strong>, {location.state}. Say <strong>"Next"</strong> to proceed.
             </span>
           </div>
 
@@ -684,7 +1281,12 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
               return (
                 <div
                   key={c.id}
-                  onClick={() => setSelectedCenter(c)}
+                  onClick={() => {
+                    setSelectedCenter(c);
+                    speakText(`Selected ${c.name}. Moving to date and slot selection.`, () => {
+                      setStep(6);
+                    });
+                  }}
                   className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                     isSelected
                       ? 'border-emerald-600 bg-emerald-50/80 shadow-md shadow-emerald-500/10'
@@ -812,7 +1414,10 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
                     key={slotInfo.time}
                     type="button"
                     disabled={isFull}
-                    onClick={() => setSelectedSlot(slotInfo.time)}
+                    onClick={() => {
+                      setSelectedSlot(slotInfo.time);
+                      speakText(`Selected slot ${slotInfo.time}. Ready to review.`);
+                    }}
                     className={`p-3.5 rounded-2xl border-2 text-left transition-all duration-200 flex items-center justify-between cursor-pointer ${
                       isFull
                         ? 'border-slate-200 bg-slate-100 opacity-60 cursor-not-allowed'
@@ -889,7 +1494,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
               <span>{tr.reviewTitle || 'Review & Confirm Slot Booking'}</span>
             </h2>
             <p className="text-xs text-slate-500 mt-1 font-medium">
-              Please verify your appointment summary before final submission.
+              Please verify your appointment summary before final submission. Say <strong>"Confirm Booking"</strong> to generate your gate pass.
             </p>
           </div>
 
