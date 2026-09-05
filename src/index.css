@@ -196,3 +196,23 @@ h1, h2, h3, h4, h5, h6 {
 .sound-bar-2 { animation: soundWave2 0.7s ease-in-out infinite; }
 .sound-bar-3 { animation: soundWave3 0.9s ease-in-out infinite; }
 .sound-bar-4 { animation: soundWave4 0.75s ease-in-out infinite; }
+
+/* Mobile First Utilities */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
+}
+
+@layer utilities {
+  .tap-highlight-transparent {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
