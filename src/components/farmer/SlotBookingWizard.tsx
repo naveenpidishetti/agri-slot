@@ -733,23 +733,23 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
   ];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 pb-24 text-slate-900">
+    <div className="max-w-3xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-28 text-slate-900">
 
-      {/* Top Header */}
-      <div className="flex items-center justify-between gap-4">
+      {/* Top Header - Ultra Clean */}
+      <div className="flex items-center justify-between gap-2">
         <button
           onClick={() => {
             stopSpeech();
             onBack();
           }}
-          className="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-emerald-700 transition-colors cursor-pointer bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-xs"
+          className="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-emerald-700 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-xs cursor-pointer active:scale-95 transition-all"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>{tr.backToDashboard || 'Back to Dashboard'}</span>
+          <span>{tr.back || 'Back'}</span>
         </button>
 
         <div className="flex items-center gap-2">
-          {/* Voice Assistant Toggle */}
+          {/* Voice Assistant Toggle - Compact Pill */}
           <button
             onClick={() => {
               const nextState = !isVoiceActive;
@@ -757,154 +757,101 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
               if (!nextState) stopSpeech();
               else requestMicrophonePermission();
             }}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer shadow-xs ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 ${
               isVoiceActive
-                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-emerald-500/20'
+                ? 'bg-emerald-600 text-white shadow-emerald-500/20'
                 : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
             }`}
           >
             {isVoiceActive ? (
               <>
-                <Volume2 className="w-3.5 h-3.5 animate-pulse" />
+                <Mic className="w-3.5 h-3.5 animate-pulse" />
                 <span>Voice Active</span>
               </>
             ) : (
               <>
-                <VolumeX className="w-3.5 h-3.5 text-slate-400" />
-                <span>Voice Muted</span>
+                <MicOff className="w-3.5 h-3.5 text-slate-400" />
+                <span>Muted</span>
               </>
             )}
           </button>
 
-          <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-            {tr.step || 'Step'} {step} / 7
+          <span className="text-xs font-black px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200">
+            {step}/7
           </span>
         </div>
       </div>
 
-      {/* 🔐 EXPLICIT MICROPHONE PERMISSION BANNER (IF NEEDED) */}
+      {/* 🔐 MICROPHONE PERMISSION BANNER (COMPACT) */}
       {micPermission === 'denied' && (
-        <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-shake">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-200 text-amber-800 flex items-center justify-center flex-shrink-0">
-              <Lock className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-xs font-black uppercase tracking-wider text-amber-900">
-                Microphone Permission Blocked / Needed
-              </div>
-              <p className="text-xs text-amber-800 font-medium mt-0.5">
-                Please allow microphone access in your browser to enable hands-free voice slot booking.
-              </p>
-            </div>
+        <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2.5 text-xs font-medium">
+            <Lock className="w-4 h-4 text-amber-700 flex-shrink-0" />
+            <span>Enable mic in browser to use voice commands.</span>
           </div>
 
           <button
             onClick={requestMicrophonePermission}
-            className="px-4 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-black text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer flex-shrink-0"
+            className="px-3 py-1.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs flex-shrink-0 active:scale-95 cursor-pointer"
           >
-            <Mic className="w-4 h-4" />
-            <span>Grant Mic Permission</span>
+            Enable Mic
           </button>
         </div>
       )}
 
-      {/* 🎙️ LIVE VOICE ASSISTANT INTERACTIVE STATUS BANNER */}
+      {/* 🎙️ COMPACT VOICE STATUS BAR (NON-INTRUSIVE) */}
       {isVoiceActive && (
-        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 text-white border-2 border-emerald-500/40 shadow-xl shadow-emerald-950/20 relative overflow-hidden animate-in fade-in duration-300">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
-            
-            <div className="flex items-center gap-3.5">
-              <div className="relative">
-                <button
-                  onClick={requestMicrophonePermission}
-                  title="Click to speak or verify mic"
-                  className={`w-13 h-13 rounded-2xl flex items-center justify-center font-bold text-white shadow-md transition-all cursor-pointer ${
-                    isSpeaking
-                      ? 'bg-gradient-to-tr from-teal-500 to-emerald-400 scale-105 ring-4 ring-emerald-400/40 animate-pulse'
-                      : isListening
-                      ? 'bg-gradient-to-tr from-emerald-600 to-teal-600 ring-2 ring-emerald-300 scale-105'
-                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                  }`}
-                >
-                  {isSpeaking ? (
-                    <Volume2 className="w-6 h-6 animate-bounce" />
-                  ) : isListening ? (
-                    <Mic className="w-6 h-6 text-white animate-pulse" />
-                  ) : (
-                    <MicOff className="w-6 h-6 text-slate-400" />
-                  )}
-                </button>
-                {isListening && (
-                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 ring-2 ring-slate-900 animate-ping" />
-                )}
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-black uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
-                    <Radio className="w-3.5 h-3.5 text-emerald-400 animate-spin-slow" />
-                    Kisan Voice Assistant • {getBCP47Tag(language)}
-                  </span>
-                  <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
-                    isSpeaking
-                      ? 'bg-teal-500/30 text-teal-200 border border-teal-400/40'
-                      : isListening
-                      ? 'bg-emerald-500/30 text-emerald-200 border border-emerald-400/40'
-                      : 'bg-slate-800 text-slate-400'
-                  }`}>
-                    {isSpeaking ? '🗣️ Speaking Instructions...' : isListening ? '🎙️ Listening to You...' : 'Mic Ready'}
-                  </span>
-                </div>
-
-                <p className="text-xs text-slate-200 font-medium mt-1 line-clamp-2 max-w-xl">
-                  {voiceTranscript ? `🎙️ You said: "${voiceTranscript}"` : voiceFeedback}
-                </p>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-center">
+        <div className="p-3 sm:p-4 rounded-2xl bg-slate-900 text-white border border-emerald-500/30 shadow-md flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="relative flex-shrink-0">
               <button
-                onClick={() => triggerStepVoicePrompt(step)}
-                title="Repeat step instructions"
-                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-emerald-200 text-xs font-bold border border-white/10 flex items-center gap-1.5 transition-all cursor-pointer"
+                onClick={requestMicrophonePermission}
+                className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white transition-all ${
+                  isSpeaking
+                    ? 'bg-teal-500 ring-2 ring-teal-300 animate-pulse'
+                    : isListening
+                    ? 'bg-emerald-500 ring-2 ring-emerald-300'
+                    : 'bg-slate-800 text-slate-400'
+                }`}
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Repeat</span>
-              </button>
-
-              <button
-                onClick={stopSpeech}
-                title="Stop audio"
-                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-bold border border-white/10 flex items-center gap-1.5 transition-all cursor-pointer"
-              >
-                <VolumeX className="w-3.5 h-3.5" />
-                <span>Mute</span>
+                {isSpeaking ? <Volume2 className="w-4 h-4 animate-bounce" /> : <Mic className="w-4 h-4" />}
               </button>
             </div>
 
+            <div className="min-w-0">
+              <div className="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
+                <span>{isSpeaking ? '🗣️ Speaking...' : isListening ? '🎙️ Listening...' : 'Mic Ready'}</span>
+                <span className="text-[10px] text-slate-400 font-normal">({getBCP47Tag(language)})</span>
+              </div>
+              <p className="text-xs text-slate-200 truncate">
+                {voiceTranscript ? `"${voiceTranscript}"` : voiceFeedback}
+              </p>
+            </div>
           </div>
 
-          {/* Soundwave animation */}
-          <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-300">
-            <span className="font-semibold text-emerald-300">
-              💡 {step === 1 ? 'Say: "Paddy", "Cotton", "వరి", "धान", "நெல்", "Wheat"' : step === 2 ? 'Say: "50 Quintals", "100", "వంద", "सौ"' : step === 7 ? 'Say: "Confirm Booking", "ఖరారు చేయండి"' : 'Say: "Next", "Back", "సరే"'}
-            </span>
-            <div className="flex items-center gap-1 h-3">
-              <span className={`w-1 bg-emerald-400 rounded-full transition-all ${isSpeaking || isListening ? 'h-3 animate-pulse' : 'h-1'}`} />
-              <span className={`w-1 bg-teal-400 rounded-full transition-all ${isSpeaking || isListening ? 'h-4 animate-bounce' : 'h-1'}`} />
-              <span className={`w-1 bg-emerald-300 rounded-full transition-all ${isSpeaking || isListening ? 'h-2 animate-pulse' : 'h-1'}`} />
-              <span className={`w-1 bg-teal-300 rounded-full transition-all ${isSpeaking || isListening ? 'h-3.5 animate-bounce' : 'h-1'}`} />
-            </div>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <button
+              onClick={() => triggerStepVoicePrompt(step)}
+              title="Repeat instructions"
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-emerald-200 text-xs font-bold cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={stopSpeech}
+              title="Mute audio"
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-bold cursor-pointer"
+            >
+              <VolumeX className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       )}
 
-      {/* Progress Bar & Steps Tabs */}
-      <div className="card-clean p-4 border border-emerald-200 shadow-xs bg-white">
+      {/* Progress Stepper - Clean & Minimal */}
+      <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-xs space-y-2">
         {/* Desktop Stepper */}
-        <div className="hidden sm:flex items-center justify-between mb-3">
+        <div className="hidden sm:flex items-center justify-between mb-2">
           {stepsList.map((s) => (
             <div
               key={s.num}
@@ -920,75 +867,44 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
               }`}
             >
               <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black ${
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
                   s.num === step
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/30 ring-2 ring-emerald-300'
+                    ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-300'
                     : s.num < step
-                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    ? 'bg-emerald-100 text-emerald-800'
                     : 'bg-slate-100 text-slate-500'
                 }`}
               >
-                {s.num < step ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : s.num}
+                {s.num < step ? <Check className="w-3 h-3 stroke-[3]" /> : s.num}
               </div>
               <span className="text-xs">{s.title}</span>
             </div>
           ))}
         </div>
 
-        {/* Mobile Stepper Header & Pill Navigation */}
-        <div className="sm:hidden space-y-2 mb-2">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-black">
-                {step}
-              </span>
-              <div>
-                <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Step {step} of 7</div>
-                <div className="text-xs font-black text-slate-900">{stepsList[step - 1]?.title}</div>
-              </div>
-            </div>
-            <span className="text-[11px] font-black text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
-              {Math.round((step / 7) * 100)}%
+        {/* Mobile Simple Stepper Bar */}
+        <div className="sm:hidden flex items-center justify-between text-xs font-bold text-slate-800">
+          <div className="flex items-center gap-1.5">
+            <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center justify-center">
+              {step}
             </span>
+            <span>Step {step} of 7: <strong className="text-emerald-700">{stepsList[step - 1]?.title}</strong></span>
           </div>
-
-          {/* Mobile Scrollable Step Pill Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-            {stepsList.map((s) => (
-              <button
-                key={s.num}
-                type="button"
-                onClick={() => {
-                  if (s.num < step) setStep(s.num);
-                }}
-                disabled={s.num > step}
-                className={`px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap flex items-center gap-1 transition-all cursor-pointer ${
-                  s.num === step
-                    ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-300'
-                    : s.num < step
-                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                    : 'bg-slate-100 text-slate-400 opacity-60'
-                }`}
-              >
-                <span>{s.num < step ? '✓' : s.num}.</span>
-                <span>{s.title}</span>
-              </button>
-            ))}
-          </div>
+          <span className="text-[11px] font-semibold text-slate-500">{Math.round((step / 7) * 100)}%</span>
         </div>
 
-        {/* Linear Progress Bar */}
-        <div className="w-full bg-slate-100 h-2 sm:h-2.5 rounded-full overflow-hidden">
+        {/* Clean Linear Bar */}
+        <div className="w-full bg-slate-100 h-1.5 sm:h-2 rounded-full overflow-hidden">
           <div
-            className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 h-full rounded-full transition-all duration-300 shadow-sm"
+            className="bg-emerald-600 h-full rounded-full transition-all duration-300"
             style={{ width: `${(step / 7) * 100}%` }}
           />
         </div>
       </div>
 
       {error && (
-        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center gap-3 text-xs font-semibold animate-shake">
-          <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-600" />
+        <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center gap-2 text-xs font-semibold animate-shake">
+          <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
           <span>{error}</span>
         </div>
       )}
