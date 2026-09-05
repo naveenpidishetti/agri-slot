@@ -212,11 +212,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <option value="en" className="bg-white text-slate-900">English</option>
               <option value="te" className="bg-white text-slate-900">తెలుగు (Telugu)</option>
               <option value="hi" className="bg-white text-slate-900">हिन्दी (Hindi)</option>
-              <option value="ta" className="bg-white text-slate-900">தமிழ் (Tamil)</option>
-              <option value="kn" className="bg-white text-slate-900">ಕನ್ನಡ (Kannada)</option>
-              <option value="mr" className="bg-white text-slate-900">मराठी (Marathi)</option>
-              <option value="pa" className="bg-white text-slate-900">ਪੰਜਾਬੀ (Punjabi)</option>
-              <option value="bn" className="bg-white text-slate-900">বাংলা (Bengali)</option>
             </select>
           </div>
 
