@@ -93,22 +93,22 @@ export const FarmerDashboard: React.FC<FarmerDashboardProps> = ({ onNavigate, on
           </div>
 
           {/* Weather & Book Action Right Box */}
-          <div className="flex items-center gap-3">
-            <div className="bg-white/90 px-4 py-2.5 rounded-2xl border border-emerald-200 shadow-xs flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+            <div className="bg-white/90 px-3.5 py-2.5 rounded-2xl border border-emerald-200 shadow-xs flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
                 <Sun className="w-6 h-6 animate-spin-slow" />
               </div>
               <div>
-                <div className="text-xs font-semibold text-slate-500">{t.mandiWeather || 'Mandi Weather'}</div>
-                <div className="text-sm font-extrabold text-slate-900">{t.sunny || '29°C • Sunny'}</div>
+                <div className="text-[11px] sm:text-xs font-semibold text-slate-500">{t.mandiWeather || 'Mandi Weather'}</div>
+                <div className="text-xs sm:text-sm font-extrabold text-slate-900">{t.sunny || '29°C • Sunny'}</div>
               </div>
             </div>
 
             <button 
               onClick={() => onNavigate('book-slot')}
-              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm transition-all duration-200 shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 hover:scale-105 cursor-pointer"
+              className="w-full sm:w-auto px-5 sm:px-6 py-3 sm:py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm transition-all duration-200 shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
             >
-              <PlusCircle className="w-5 h-5 stroke-[2.5]" />
+              <PlusCircle className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
               <span>{t.bookSlot}</span>
             </button>
           </div>

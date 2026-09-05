@@ -892,6 +892,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
 
       {/* Progress Bar & Steps Tabs */}
       <div className="card-clean p-4 border border-emerald-200 shadow-xs bg-white">
+        {/* Desktop Stepper */}
         <div className="hidden sm:flex items-center justify-between mb-3">
           {stepsList.map((s) => (
             <div
@@ -923,10 +924,52 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
           ))}
         </div>
 
-        {/* Mobile Linear Bar */}
-        <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+        {/* Mobile Stepper Header & Pill Navigation */}
+        <div className="sm:hidden space-y-2 mb-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-black">
+                {step}
+              </span>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Step {step} of 7</div>
+                <div className="text-xs font-black text-slate-900">{stepsList[step - 1]?.title}</div>
+              </div>
+            </div>
+            <span className="text-[11px] font-black text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
+              {Math.round((step / 7) * 100)}%
+            </span>
+          </div>
+
+          {/* Mobile Scrollable Step Pill Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+            {stepsList.map((s) => (
+              <button
+                key={s.num}
+                type="button"
+                onClick={() => {
+                  if (s.num < step) setStep(s.num);
+                }}
+                disabled={s.num > step}
+                className={`px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap flex items-center gap-1 transition-all cursor-pointer ${
+                  s.num === step
+                    ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-300'
+                    : s.num < step
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    : 'bg-slate-100 text-slate-400 opacity-60'
+                }`}
+              >
+                <span>{s.num < step ? '✓' : s.num}.</span>
+                <span>{s.title}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Linear Progress Bar */}
+        <div className="w-full bg-slate-100 h-2 sm:h-2.5 rounded-full overflow-hidden">
           <div
-            className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-300"
+            className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 h-full rounded-full transition-all duration-300 shadow-sm"
             style={{ width: `${(step / 7) * 100}%` }}
           />
         </div>
@@ -943,10 +986,10 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
       {/* STEP 1: SELECT CROP */}
       {/* ========================================================================= */}
       {step === 1 && (
-        <div className="card-clean p-6 sm:p-8 space-y-6 border border-emerald-200 bg-white">
+        <div className="card-clean p-4 sm:p-8 space-y-5 border border-emerald-200 bg-white">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
-              <h2 className="text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
+              <h2 className="text-lg sm:text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
                 <span>🌾</span>
                 <span>{tr.selectCropTitle || 'Select Crop for Mandi Procurement'}</span>
               </h2>
@@ -960,8 +1003,9 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
               {['Paddy (వరి / धान)', 'Cotton (పత్తి / कपास)', 'Wheat (గోధుమలు / गेहूं)', 'Maize (మొక్కజొన్న)'].map((cHint) => (
                 <button
                   key={cHint}
+                  type="button"
                   onClick={() => handleVoiceCommand(cHint.split(' ')[0])}
-                  className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold hover:bg-emerald-100 transition-colors cursor-pointer flex items-center gap-1"
+                  className="px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold hover:bg-emerald-100 transition-colors cursor-pointer flex items-center gap-1"
                 >
                   <Mic className="w-3 h-3 text-emerald-600" />
                   <span>{cHint}</span>
@@ -970,7 +1014,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
             {crops.map((c) => {
               const isSelected = selectedCrop?.id === c.id;
               return (
@@ -982,39 +1026,44 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
                       setStep(2);
                     });
                   }}
-                  className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 relative ${
+                  className={`p-3 sm:p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 relative flex flex-col justify-between ${
                     isSelected
-                      ? 'border-emerald-600 bg-emerald-50/80 shadow-md shadow-emerald-500/10 scale-[1.02]'
-                      : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50/60'
+                      ? 'border-emerald-600 bg-emerald-50/90 shadow-md shadow-emerald-500/10 scale-[1.02] ring-2 ring-emerald-400/50'
+                      : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50/80 active:scale-98'
                   }`}
                 >
                   {isSelected && (
-                    <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center">
-                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    <div className="absolute top-2 right-2 sm:top-3 sm:right-3 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                      <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[3]" />
                     </div>
                   )}
-                  <div className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md inline-block mb-2">
-                    {c.category}
+                  <div>
+                    <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md inline-block mb-1.5">
+                      {c.category}
+                    </div>
+                    <h3 className="text-xs sm:text-sm font-black text-slate-900 font-outfit line-clamp-2">{c.name}</h3>
                   </div>
-                  <h3 className="text-sm font-black text-slate-900 font-outfit">{c.name}</h3>
-                  <div className="mt-2 text-xs flex items-center justify-between text-slate-600 font-semibold">
-                    <span>MSP Rate:</span>
-                    <span className="text-emerald-700 font-extrabold text-sm">₹{c.msp_price_per_quintal} / Q</span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 mt-1">
-                    Max Moisture: {c.max_moisture_percent}%
+
+                  <div className="mt-2.5 pt-2 border-t border-slate-100">
+                    <div className="text-[11px] sm:text-xs flex items-center justify-between text-slate-600 font-semibold flex-wrap">
+                      <span>MSP Rate:</span>
+                      <span className="text-emerald-700 font-black text-xs sm:text-sm">₹{c.msp_price_per_quintal}/Q</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">
+                      Moisture: ≤{c.max_moisture_percent}%
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          <div className="pt-4 flex items-center justify-between border-t border-slate-100">
-            <div className="text-xs text-slate-500 font-medium">
+          <div className="pt-4 flex items-center justify-between border-t border-slate-100 gap-3">
+            <div className="text-xs text-slate-500 font-medium truncate">
               {selectedCrop ? (
                 <span className="text-emerald-700 font-bold">Selected: {selectedCrop.name}</span>
               ) : (
-                <span className="text-amber-600 font-semibold">Speak or click a crop to proceed</span>
+                <span className="text-amber-600 font-semibold">Tap a crop card to continue</span>
               )}
             </div>
 
@@ -1024,7 +1073,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
                 else setError('Please select a crop first');
               }}
               disabled={!selectedCrop}
-              className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20"
+              className="px-5 sm:px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20 active:scale-95 flex-shrink-0"
             >
               <span>{tr.continue || 'Continue'}</span>
               <ArrowRight className="w-4 h-4" />
@@ -1037,10 +1086,10 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
       {/* STEP 2: QUANTITY */}
       {/* ========================================================================= */}
       {step === 2 && (
-        <div className="card-clean p-6 sm:p-8 space-y-6 border border-emerald-200 bg-white">
+        <div className="card-clean p-4 sm:p-8 space-y-5 border border-emerald-200 bg-white">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
-              <h2 className="text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
+              <h2 className="text-lg sm:text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
                 <span>⚖️</span>
                 <span>{tr.enterQuantityTitle || 'Enter Harvest Quantity (Quintals)'}</span>
               </h2>
@@ -1049,12 +1098,13 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               {[50, 100, 200].map((qHint) => (
                 <button
                   key={qHint}
+                  type="button"
                   onClick={() => handleVoiceCommand(`${qHint} quintals`)}
-                  className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold hover:bg-emerald-100 transition-colors cursor-pointer flex items-center gap-1"
+                  className="px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold hover:bg-emerald-100 transition-colors cursor-pointer flex items-center gap-1"
                 >
                   <Mic className="w-3 h-3 text-emerald-600" />
                   <span>{qHint} Q</span>
@@ -1063,24 +1113,57 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
             </div>
           </div>
 
-          <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200 flex flex-col items-center justify-center space-y-4">
-            <div className="text-4xl sm:text-5xl font-black text-emerald-700 font-outfit">
-              {quantity} <span className="text-2xl text-slate-600 font-bold">Quintals</span>
-            </div>
-            <div className="text-xs font-semibold text-slate-500">
-              Total Weight: {(quantity * 100).toLocaleString('en-IN')} kg ({quantity * 2} standard 50kg bags)
+          <div className="p-4 sm:p-6 rounded-3xl bg-slate-50 border border-slate-200 flex flex-col items-center justify-center space-y-4">
+            
+            {/* Quick +/- Stepper Buttons & Large Number */}
+            <div className="flex items-center gap-3 sm:gap-4 justify-center w-full">
+              <button
+                type="button"
+                onClick={() => {
+                  const n = Math.max(5, quantity - 5);
+                  setQuantity(n);
+                  speakText(`${n} Quintals.`);
+                }}
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white border-2 border-slate-200 text-slate-800 hover:border-emerald-500 hover:bg-emerald-50 font-black text-2xl flex items-center justify-center shadow-xs active:scale-90 transition-all cursor-pointer"
+                title="Decrease 5 Quintals"
+              >
+                -
+              </button>
+
+              <div className="text-center px-2">
+                <div className="text-3xl sm:text-5xl font-black text-emerald-700 font-outfit">
+                  {quantity} <span className="text-base sm:text-2xl text-slate-600 font-bold">Quintals</span>
+                </div>
+                <div className="text-[11px] sm:text-xs font-semibold text-slate-500 mt-1">
+                  {(quantity * 100).toLocaleString('en-IN')} kg • ~{quantity * 2} standard bags
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const n = quantity + 5;
+                  setQuantity(n);
+                  speakText(`${n} Quintals.`);
+                }}
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white border-2 border-slate-200 text-slate-800 hover:border-emerald-500 hover:bg-emerald-50 font-black text-2xl flex items-center justify-center shadow-xs active:scale-90 transition-all cursor-pointer"
+                title="Increase 5 Quintals"
+              >
+                +
+              </button>
             </div>
 
             {/* Quick Quantity Presets */}
-            <div className="flex items-center gap-2 flex-wrap justify-center pt-2">
-              {[20, 40, 60, 80, 100, 150, 200].map((q) => (
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center pt-2">
+              {[10, 25, 50, 75, 100, 150, 200, 300].map((q) => (
                 <button
                   key={q}
+                  type="button"
                   onClick={() => {
                     setQuantity(q);
                     speakText(`${q} Quintals selected.`);
                   }}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 ${
                     quantity === q
                       ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-300'
                       : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
@@ -1092,7 +1175,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
             </div>
 
             {/* Range Slider */}
-            <div className="w-full max-w-md pt-4">
+            <div className="w-full max-w-md pt-2 px-2">
               <input
                 type="range"
                 min="5"
@@ -1100,7 +1183,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
                 step="5"
                 value={quantity}
                 onChange={(e) => setQuantity(parseInt(e.target.value) || 5)}
-                className="w-full accent-emerald-600 cursor-pointer"
+                className="w-full accent-emerald-600 cursor-pointer h-2 bg-slate-200 rounded-lg"
               />
               <div className="flex justify-between text-[11px] text-slate-400 font-bold mt-1">
                 <span>5 Q</span>
@@ -1110,7 +1193,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
             </div>
 
             {/* Direct Number Input */}
-            <div className="flex items-center gap-2 pt-2">
+            <div className="flex items-center gap-2 pt-1 flex-wrap justify-center">
               <label className="text-xs font-bold text-slate-600">Manual Entry:</label>
               <input
                 type="number"
@@ -1118,7 +1201,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
                 max="1000"
                 value={quantity}
                 onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-24 px-3 py-1.5 rounded-xl border border-slate-300 text-center font-bold text-sm text-slate-900 bg-white"
+                className="w-24 px-3 py-2 rounded-xl border border-slate-300 text-center font-bold text-base text-slate-900 bg-white shadow-xs focus:ring-2 focus:ring-emerald-500"
               />
               <span className="text-xs font-bold text-slate-500">Quintals</span>
             </div>
@@ -1126,36 +1209,38 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
 
           {/* MSP Estimated Value Summary */}
           {selectedCrop && (
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between flex-wrap gap-2">
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-xs flex-shrink-0">
                   ₹
                 </div>
                 <div>
                   <div className="text-xs text-slate-600 font-semibold">Estimated MSP Payout</div>
-                  <div className="text-lg font-black text-emerald-800">
+                  <div className="text-base sm:text-lg font-black text-emerald-800">
                     ₹{((selectedCrop.msp_price_per_quintal || 0) * quantity).toLocaleString('en-IN')}
                   </div>
                 </div>
               </div>
-              <div className="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
+              <div className="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
                 @ ₹{selectedCrop.msp_price_per_quintal}/Q
               </div>
             </div>
           )}
 
-          <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+          <div className="pt-4 flex items-center justify-between border-t border-slate-100 gap-3">
             <button
+              type="button"
               onClick={() => setStep(1)}
-              className="px-5 py-2.5 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+              className="px-4 sm:px-5 py-3 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>{tr.back || 'Back'}</span>
             </button>
 
             <button
+              type="button"
               onClick={() => setStep(3)}
-              className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20"
+              className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20 active:scale-95"
             >
               <span>{tr.continue || 'Continue'}</span>
               <ArrowRight className="w-4 h-4" />
@@ -1168,9 +1253,9 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
       {/* STEP 3: LOCATION (STATE & DISTRICT) */}
       {/* ========================================================================= */}
       {step === 3 && (
-        <div className="card-clean p-6 sm:p-8 space-y-6 border border-emerald-200 bg-white">
+        <div className="card-clean p-4 sm:p-8 space-y-5 border border-emerald-200 bg-white">
           <div>
-            <h2 className="text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
+            <h2 className="text-lg sm:text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
               <span>📍</span>
               <span>{tr.selectLocationTitle || 'Select Farm Location & District'}</span>
             </h2>
@@ -1187,7 +1272,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
               <select
                 value={location.state}
                 onChange={(e) => handleStateChange(e.target.value)}
-                className="w-full p-3 rounded-xl border border-slate-300 font-bold text-sm bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer"
+                className="w-full p-3.5 rounded-xl border border-slate-300 font-bold text-sm bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer shadow-xs"
               >
                 {ALL_INDIAN_STATES.map((s) => (
                   <option key={s.state} value={s.state}>
@@ -1204,7 +1289,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
               <select
                 value={location.district}
                 onChange={(e) => handleDistrictChange(e.target.value)}
-                className="w-full p-3 rounded-xl border border-slate-300 font-bold text-sm bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer"
+                className="w-full p-3.5 rounded-xl border border-slate-300 font-bold text-sm bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer shadow-xs"
               >
                 {(ALL_INDIAN_STATES.find((s) => s.state === location.state)?.districts || ['District Hub']).map(
                   (d) => (
@@ -1225,30 +1310,32 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
                 value={location.village}
                 onChange={(e) => setLocation({ ...location, village: e.target.value })}
                 placeholder="e.g. Hasanparthy, Warangal"
-                className="w-full p-3 rounded-xl border border-slate-300 font-bold text-sm bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="w-full p-3.5 rounded-xl border border-slate-300 font-bold text-sm bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
               />
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-xs text-blue-900 font-medium flex items-center gap-3">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-blue-50 border border-blue-200 text-xs text-blue-900 font-medium flex items-center gap-3">
             <Info className="w-5 h-5 text-blue-600 flex-shrink-0" />
             <span>
               Found <strong>{centers.length}</strong> official procurement centers operating in <strong>{location.district}</strong>, {location.state}. Say <strong>"Next"</strong> to proceed.
             </span>
           </div>
 
-          <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+          <div className="pt-4 flex items-center justify-between border-t border-slate-100 gap-3">
             <button
+              type="button"
               onClick={() => setStep(2)}
-              className="px-5 py-2.5 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+              className="px-4 sm:px-5 py-3 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>{tr.back || 'Back'}</span>
             </button>
 
             <button
+              type="button"
               onClick={() => setStep(4)}
-              className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20"
+              className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20 active:scale-95"
             >
               <span>{tr.continue || 'Continue'}</span>
               <ArrowRight className="w-4 h-4" />
@@ -1261,9 +1348,9 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
       {/* STEP 4: FARMER EMAIL FOR TOKEN DISPATCH */}
       {/* ========================================================================= */}
       {step === 4 && (
-        <div className="card-clean p-6 sm:p-8 space-y-6 border border-emerald-200 bg-white">
+        <div className="card-clean p-4 sm:p-8 space-y-5 border border-emerald-200 bg-white">
           <div>
-            <h2 className="text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
+            <h2 className="text-lg sm:text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
               <span>📧</span>
               <span>{tr.farmerEmailTitle || 'Digital QR Token & Email Confirmation'}</span>
             </h2>
@@ -1286,17 +1373,17 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
                   value={farmerEmail}
                   onChange={(e) => setFarmerEmail(e.target.value)}
                   placeholder="e.g. vasanthreddy302@gmail.com"
-                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-300 font-bold text-sm bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-slate-300 font-bold text-sm bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
                 />
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 font-medium space-y-1">
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 font-medium space-y-1">
               <div className="font-bold flex items-center gap-1.5 text-emerald-800">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Instant Delivery Highlights:</span>
               </div>
-              <ul className="list-disc pl-5 space-y-0.5 text-emerald-800">
+              <ul className="list-disc pl-5 space-y-0.5 text-emerald-800 text-[11px] sm:text-xs">
                 <li>Gate Entry QR Code Pass for zero-queue security check</li>
                 <li>Live Queue Position & Assigned Weighbridge Counter</li>
                 <li>Official Government MSP Settlement Receipt copy</li>
@@ -1304,22 +1391,24 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
             </div>
           </div>
 
-          <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+          <div className="pt-4 flex items-center justify-between border-t border-slate-100 gap-3">
             <button
+              type="button"
               onClick={() => setStep(3)}
-              className="px-5 py-2.5 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+              className="px-4 sm:px-5 py-3 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>{tr.back || 'Back'}</span>
             </button>
 
             <button
+              type="button"
               onClick={handleFetchAiRecommendation}
               disabled={loading || !farmerEmail.trim()}
-              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white font-black text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20"
+              className="px-5 sm:px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white font-black text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20 active:scale-95"
             >
               <Sparkles className="w-4 h-4 animate-spin-slow" />
-              <span>{loading ? 'Analyzing AI Recommendation...' : 'Get AI Mandi Match'}</span>
+              <span>{loading ? 'Analyzing...' : 'Get AI Mandi Match'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -1330,10 +1419,10 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
       {/* STEP 5: PROCUREMENT CENTER SELECTION & AI RECOMMENDATION */}
       {/* ========================================================================= */}
       {step === 5 && (
-        <div className="card-clean p-6 sm:p-8 space-y-6 border border-emerald-200 bg-white">
+        <div className="card-clean p-4 sm:p-8 space-y-5 border border-emerald-200 bg-white">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
-              <h2 className="text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
+              <h2 className="text-lg sm:text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
                 <span>🏢</span>
                 <span>{tr.selectCenterTitle || 'Select APMC Procurement Center'}</span>
               </h2>
@@ -1345,18 +1434,18 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
 
           {/* AI Recommendation Banner */}
           {aiRec && (
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-300 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
-                <Sparkles className="w-5 h-5 animate-spin-slow" />
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-300 flex items-start gap-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 animate-spin-slow" />
               </div>
               <div className="text-xs">
-                <div className="font-extrabold text-emerald-900 flex items-center gap-2">
+                <div className="font-extrabold text-emerald-900 flex items-center gap-2 flex-wrap">
                   <span>AI Optimal Mandi Match</span>
                   <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full font-bold">
                     Fastest Weighbridge
                   </span>
                 </div>
-                <p className="text-slate-700 mt-1 font-medium">
+                <p className="text-slate-700 mt-1 font-medium text-[11px] sm:text-xs">
                   {aiRec.reason || `Recommended based on low congestion and proximity to ${location.village}.`}
                 </p>
               </div>
@@ -1364,7 +1453,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
           )}
 
           {/* Centers List */}
-          <div className="space-y-3">
+          <div className="space-y-2.5 sm:space-y-3">
             {centers.map((c: any) => {
               const isSelected = selectedCenter?.id === c.id;
               const isAiPick = aiRec?.recommendedCenter?.id === c.id;
@@ -1378,22 +1467,22 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
                       setStep(6);
                     });
                   }}
-                  className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                  className={`p-3.5 sm:p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                     isSelected
-                      ? 'border-emerald-600 bg-emerald-50/80 shadow-md shadow-emerald-500/10'
-                      : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50/60'
+                      ? 'border-emerald-600 bg-emerald-50/90 shadow-md shadow-emerald-500/10 ring-2 ring-emerald-400/40'
+                      : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50 active:scale-99'
                   }`}
                 >
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-black text-slate-900 font-outfit">{c.name}</h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-xs sm:text-sm font-black text-slate-900 font-outfit">{c.name}</h3>
                       {isAiPick && (
                         <span className="text-[10px] font-extrabold bg-teal-100 text-teal-800 border border-teal-300 px-2 py-0.5 rounded-full flex items-center gap-1">
                           <Sparkles className="w-3 h-3" /> AI Pick
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-slate-500 font-medium flex items-center gap-3">
+                    <div className="text-[11px] sm:text-xs text-slate-500 font-medium flex items-center gap-2 sm:gap-3 flex-wrap">
                       <span className="flex items-center gap-1">
                         <MapPin className="w-3.5 h-3.5 text-slate-400" />
                         {c.location_area || location.district}
@@ -1403,10 +1492,10 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <div className="text-xs font-bold text-slate-700">Distance</div>
-                      <div className="text-xs font-black text-emerald-700">~{c.distance_km || 8.5} km</div>
+                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                    <div className="text-left sm:text-right">
+                      <div className="text-[10px] sm:text-xs font-bold text-slate-500">Distance</div>
+                      <div className="text-xs sm:text-sm font-black text-emerald-700">~{c.distance_km || 8.5} km</div>
                     </div>
 
                     <div
@@ -1422,22 +1511,24 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
             })}
           </div>
 
-          <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+          <div className="pt-4 flex items-center justify-between border-t border-slate-100 gap-3">
             <button
+              type="button"
               onClick={() => setStep(4)}
-              className="px-5 py-2.5 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+              className="px-4 sm:px-5 py-3 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>{tr.back || 'Back'}</span>
             </button>
 
             <button
+              type="button"
               onClick={() => {
                 if (selectedCenter) setStep(6);
                 else setError('Please select a center');
               }}
               disabled={!selectedCenter}
-              className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20"
+              className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20 active:scale-95"
             >
               <span>{tr.continue || 'Continue'}</span>
               <ArrowRight className="w-4 h-4" />
@@ -1450,9 +1541,9 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
       {/* STEP 6: DATE & TIME SLOT SELECTION (MAX 3 SLOTS CAP) */}
       {/* ========================================================================= */}
       {step === 6 && (
-        <div className="card-clean p-6 sm:p-8 space-y-6 border border-emerald-200 bg-white">
+        <div className="card-clean p-4 sm:p-8 space-y-5 border border-emerald-200 bg-white">
           <div>
-            <h2 className="text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
+            <h2 className="text-lg sm:text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
               <span>⏰</span>
               <span>{tr.selectSlotTitle || 'Choose Date & Preferred Time Slot'}</span>
             </h2>
@@ -1471,7 +1562,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
               value={selectedDate}
               min={new Date().toISOString().split('T')[0]}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full sm:w-64 p-3 rounded-xl border border-slate-300 font-bold text-sm bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer"
+              className="w-full sm:w-64 p-3.5 rounded-xl border border-slate-300 font-bold text-sm bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer shadow-xs"
             />
           </div>
 
@@ -1481,7 +1572,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
               Available 30-Minute Windows ({selectedDate})
             </label>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
               {(slotCapacities.length > 0
                 ? slotCapacities
                 : [
@@ -1509,7 +1600,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
                       setSelectedSlot(slotInfo.time);
                       speakText(`Selected slot ${slotInfo.time}. Ready to review.`);
                     }}
-                    className={`p-3.5 rounded-2xl border-2 text-left transition-all duration-200 flex items-center justify-between cursor-pointer ${
+                    className={`p-3 sm:p-3.5 rounded-2xl border-2 text-left transition-all duration-200 flex items-center justify-between cursor-pointer active:scale-98 ${
                       isFull
                         ? 'border-slate-200 bg-slate-100 opacity-60 cursor-not-allowed'
                         : isSelected
@@ -1550,22 +1641,24 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
             </div>
           </div>
 
-          <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+          <div className="pt-4 flex items-center justify-between border-t border-slate-100 gap-3">
             <button
+              type="button"
               onClick={() => setStep(5)}
-              className="px-5 py-2.5 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+              className="px-4 sm:px-5 py-3 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>{tr.back || 'Back'}</span>
             </button>
 
             <button
+              type="button"
               onClick={() => {
                 if (selectedSlot) setStep(7);
                 else setError('Please select a time slot');
               }}
               disabled={!selectedSlot}
-              className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20"
+              className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black text-xs flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20 active:scale-95"
             >
               <span>{tr.continue || 'Continue'}</span>
               <ArrowRight className="w-4 h-4" />
@@ -1578,9 +1671,9 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
       {/* STEP 7: REVIEW & CONFIRM BOOKING */}
       {/* ========================================================================= */}
       {step === 7 && (
-        <div className="card-clean p-6 sm:p-8 space-y-6 border border-emerald-200 bg-white">
+        <div className="card-clean p-4 sm:p-8 space-y-5 border border-emerald-200 bg-white">
           <div>
-            <h2 className="text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
+            <h2 className="text-lg sm:text-xl font-black font-outfit text-slate-900 flex items-center gap-2">
               <span>📋</span>
               <span>{tr.reviewTitle || 'Review & Confirm Slot Booking'}</span>
             </h2>
@@ -1590,45 +1683,45 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
           </div>
 
           {/* Booking Summary Card */}
-          <div className="p-5 rounded-3xl bg-slate-50 border border-slate-200 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="p-4 sm:p-5 rounded-3xl bg-slate-50 border border-slate-200 space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               
-              <div className="p-3.5 rounded-2xl bg-white border border-slate-200">
-                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Crop Details</div>
-                <div className="text-sm font-black text-slate-900 mt-0.5">{selectedCrop?.name}</div>
-                <div className="text-xs font-semibold text-emerald-700 mt-0.5">
+              <div className="p-3 sm:p-3.5 rounded-2xl bg-white border border-slate-200">
+                <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Crop Details</div>
+                <div className="text-xs sm:text-sm font-black text-slate-900 mt-0.5">{selectedCrop?.name}</div>
+                <div className="text-[11px] sm:text-xs font-semibold text-emerald-700 mt-0.5">
                   MSP: ₹{selectedCrop?.msp_price_per_quintal} / Q
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white border border-slate-200">
-                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Quantity & Value</div>
-                <div className="text-sm font-black text-slate-900 mt-0.5">{quantity} Quintals ({(quantity * 100).toLocaleString('en-IN')} kg)</div>
-                <div className="text-xs font-black text-emerald-700 mt-0.5">
+              <div className="p-3 sm:p-3.5 rounded-2xl bg-white border border-slate-200">
+                <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Quantity & Value</div>
+                <div className="text-xs sm:text-sm font-black text-slate-900 mt-0.5">{quantity} Quintals ({(quantity * 100).toLocaleString('en-IN')} kg)</div>
+                <div className="text-[11px] sm:text-xs font-black text-emerald-700 mt-0.5">
                   Total MSP: ₹{((selectedCrop?.msp_price_per_quintal || 0) * quantity).toLocaleString('en-IN')}
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white border border-slate-200">
-                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Mandi Procurement Center</div>
-                <div className="text-sm font-black text-slate-900 mt-0.5">{selectedCenter?.name}</div>
-                <div className="text-xs font-medium text-slate-500 mt-0.5">
+              <div className="p-3 sm:p-3.5 rounded-2xl bg-white border border-slate-200">
+                <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Mandi Procurement Center</div>
+                <div className="text-xs sm:text-sm font-black text-slate-900 mt-0.5">{selectedCenter?.name}</div>
+                <div className="text-[11px] sm:text-xs font-medium text-slate-500 mt-0.5">
                   {location.village}, {location.district}, {location.state}
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white border border-slate-200">
-                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Date & Time Slot</div>
-                <div className="text-sm font-black text-slate-900 mt-0.5">{selectedDate}</div>
-                <div className="text-xs font-bold text-emerald-700 mt-0.5">{selectedSlot}</div>
+              <div className="p-3 sm:p-3.5 rounded-2xl bg-white border border-slate-200">
+                <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Date & Time Slot</div>
+                <div className="text-xs sm:text-sm font-black text-slate-900 mt-0.5">{selectedDate}</div>
+                <div className="text-[11px] sm:text-xs font-bold text-emerald-700 mt-0.5">{selectedSlot}</div>
               </div>
 
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-emerald-100/70 border border-emerald-300 text-xs text-emerald-900 font-bold flex items-center justify-between flex-wrap gap-2">
+            <div className="p-3 sm:p-3.5 rounded-2xl bg-emerald-100/70 border border-emerald-300 text-xs text-emerald-900 font-bold flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-emerald-700" />
-                <span>QR Token Sent To: {farmerEmail}</span>
+                <Mail className="w-4 h-4 text-emerald-700 flex-shrink-0" />
+                <span className="truncate">QR Token Sent To: {farmerEmail}</span>
               </div>
               <span className="text-[10px] bg-emerald-800 text-white px-2 py-0.5 rounded-md">SMS + Email</span>
             </div>
@@ -1636,22 +1729,24 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
 
           <AICaptionDisclaimer />
 
-          <div className="pt-4 flex items-center justify-between border-t border-slate-100">
+          <div className="pt-4 flex items-center justify-between border-t border-slate-100 gap-3">
             <button
+              type="button"
               onClick={() => setStep(6)}
-              className="px-5 py-2.5 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+              className="px-4 sm:px-5 py-3 rounded-2xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>{tr.back || 'Back'}</span>
             </button>
 
             <button
+              type="button"
               onClick={handleConfirmBooking}
               disabled={loading}
-              className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white font-black text-sm flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/30 hover:scale-105 transition-all"
+              className="w-full sm:w-auto px-6 sm:px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/30 active:scale-95 transition-all"
             >
               <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
-              <span>{loading ? 'Confirming & Generating QR Token...' : 'Confirm & Generate Digital Token'}</span>
+              <span>{loading ? 'Confirming...' : 'Confirm & Generate Digital Token'}</span>
             </button>
           </div>
         </div>
