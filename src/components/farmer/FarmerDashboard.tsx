@@ -17,6 +17,14 @@ import {
   CheckCircle2, 
   ChevronRight,
   Sun,
+  Cloud,
+  CloudRain,
+  CloudSun,
+  Droplets,
+  Wind,
+  Thermometer,
+  Eye,
+  Umbrella,
   Stethoscope,
   Cpu,
   BarChart3,
@@ -254,6 +262,194 @@ export const FarmerDashboard: React.FC<FarmerDashboardProps> = ({ onNavigate, on
             </div>
           </div>
           <ChevronRight className="w-5 h-5 text-teal-600 group-hover:translate-x-1.5 transition-transform flex-shrink-0" />
+        </div>
+
+      </div>
+
+      {/* ========================================================================= */}
+      {/* ⛅ AGRICULTURAL WEATHER & MANDI MICRO-CLIMATE ADVISORY HUB */}
+      {/* ========================================================================= */}
+      <div className="card-clean p-6 sm:p-8 border-2 border-sky-200 bg-gradient-to-br from-sky-50/70 via-white to-emerald-50/40 shadow-sm relative overflow-hidden space-y-6">
+        
+        {/* Top Header of Weather Widget */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-sky-100">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-teal-500 text-white flex items-center justify-center shadow-md shadow-sky-500/20 flex-shrink-0">
+              <Sun className="w-6 h-6 animate-spin-slow" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-200">
+                  🛰️ {language === 'te' ? 'లైవ్ శాటిలైట్ వాతావరణం' : language === 'hi' ? 'लाइव सैटेलाइट मौसम' : 'Live Satellite Weather'}
+                </span>
+                <span className="text-xs font-bold text-slate-500">
+                  📍 {user?.village || 'Warangal'}, {user?.district || 'Warangal Urban'}
+                </span>
+              </div>
+              <h2 className="text-lg sm:text-xl font-black font-outfit text-slate-900 mt-0.5">
+                {language === 'te' ? 'రైతు వాతావరణ సమాచారం & పంట సలహా' : language === 'hi' ? 'कृषि मौसम पूर्वानुमान एवं दैनिक फसल सलाह' : 'Agricultural Weather & Micro-Climate Advisory'}
+              </h2>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black px-3 py-1.5 rounded-xl bg-white border border-sky-200 text-sky-800 shadow-xs">
+              Updated: Just Now • 29°C
+            </span>
+          </div>
+        </div>
+
+        {/* Live Weather Metrics Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+          
+          {/* 1. Main Temp Card */}
+          <div className="col-span-2 sm:col-span-2 p-4 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-md flex items-center justify-between">
+            <div>
+              <div className="text-xs text-sky-100 font-bold uppercase tracking-wider">
+                {language === 'te' ? 'ప్రస్తుత ఉష్ణోగ్రత' : language === 'hi' ? 'वर्तमान तापमान' : 'Current Temp'}
+              </div>
+              <div className="text-3xl sm:text-4xl font-black font-outfit mt-1">
+                29°C
+              </div>
+              <div className="text-xs font-semibold text-sky-100 mt-0.5">
+                {language === 'te' ? 'ఎండగా ఉంది • స్పష్టమైన ఆకాశం' : language === 'hi' ? 'धूप और साफ आसमान' : 'Sunny & Clear Skies'}
+              </div>
+            </div>
+            <Sun className="w-12 h-12 text-amber-300 animate-spin-slow" />
+          </div>
+
+          {/* 2. Humidity */}
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-bold uppercase">{language === 'te' ? 'తేమ' : language === 'hi' ? 'नमी' : 'Humidity'}</span>
+              <Droplets className="w-4 h-4 text-sky-600" />
+            </div>
+            <div className="text-xl font-black font-outfit text-slate-900 mt-2">
+              58%
+            </div>
+            <div className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md mt-1 inline-block w-max">
+              {language === 'te' ? 'అనుకూలం' : language === 'hi' ? 'अनुकूल' : 'Optimal'}
+            </div>
+          </div>
+
+          {/* 3. Wind Speed */}
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-bold uppercase">{language === 'te' ? 'గాలి వేగం' : language === 'hi' ? 'हवा की गति' : 'Wind Speed'}</span>
+              <Wind className="w-4 h-4 text-teal-600" />
+            </div>
+            <div className="text-xl font-black font-outfit text-slate-900 mt-2">
+              12 <span className="text-xs text-slate-500">km/h</span>
+            </div>
+            <div className="text-[10px] font-bold text-slate-500 mt-1">
+              ENE Direction
+            </div>
+          </div>
+
+          {/* 4. Rain Chance */}
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-bold uppercase">{language === 'te' ? 'వర్షం అవకాశం' : language === 'hi' ? 'वर्षा की संभावना' : 'Rain Chance'}</span>
+              <Umbrella className="w-4 h-4 text-indigo-600" />
+            </div>
+            <div className="text-xl font-black font-outfit text-slate-900 mt-2">
+              5%
+            </div>
+            <div className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md mt-1 inline-block w-max">
+              {language === 'te' ? 'వర్షం లేదు' : language === 'hi' ? 'शुष्क दिन' : 'Dry Day'}
+            </div>
+          </div>
+
+          {/* 5. UV Index & Air Quality */}
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-bold uppercase">{language === 'te' ? 'UV ఇండెక్స్' : language === 'hi' ? 'यूवी इंडेक्स' : 'UV Index'}</span>
+              <Eye className="w-4 h-4 text-amber-600" />
+            </div>
+            <div className="text-xl font-black font-outfit text-slate-900 mt-2">
+              6 <span className="text-xs text-slate-500">Mod</span>
+            </div>
+            <div className="text-[10px] font-bold text-slate-500 mt-1">
+              AQI: 42 (Clean)
+            </div>
+          </div>
+
+        </div>
+
+        {/* 5-Day Farm Weather Forecast Strip */}
+        <div>
+          <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+            <span>{language === 'te' ? 'రాబోయే 5 రోజుల వాతావరణ సూచన' : language === 'hi' ? 'अगले 5 दिनों का कृषि मौसम पूर्वानुमान' : '5-Day Agricultural Forecast'}</span>
+            <span className="text-[11px] text-emerald-700 font-semibold">{user?.district || 'Warangal'} Region</span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+            {[
+              { day: 'Today', day_te: 'ఈరోజు', day_hi: 'आज', temp: '29° / 20°', condition: 'Sunny', condition_te: 'ఎండగా', condition_hi: 'धूप', icon: Sun, color: 'text-amber-500' },
+              { day: 'Tomorrow', day_te: 'రేపు', day_hi: 'कल', temp: '31° / 21°', condition: 'Clear Sky', condition_te: 'నిర్మల ఆకాశం', condition_hi: 'साफ', icon: CloudSun, color: 'text-sky-500' },
+              { day: 'Wed', day_te: 'బుధవారం', day_hi: 'बुधवार', temp: '30° / 22°', condition: 'Partly Cloudy', condition_te: 'కొద్దిగా మబ్బులు', condition_hi: 'आंशिक बादल', icon: Cloud, color: 'text-slate-500' },
+              { day: 'Thu', day_te: 'గురువారం', day_hi: 'गुरुवार', temp: '28° / 19°', condition: 'Light Shower', condition_te: 'చిరుజల్లులు', condition_hi: 'हल्की बारिश', icon: CloudRain, color: 'text-blue-500' },
+              { day: 'Fri', day_te: 'శుక్రవారం', day_hi: 'शुक्रवार', temp: '30° / 20°', condition: 'Sunny', condition_te: 'ఎండగా', condition_hi: 'धूप', icon: Sun, color: 'text-amber-500' }
+            ].map((d, i) => {
+              const IconComponent = d.icon;
+              return (
+                <div key={i} className="p-3 rounded-2xl bg-white border border-slate-200 hover:border-sky-300 transition-all text-center flex flex-col items-center justify-between shadow-xs">
+                  <div className="text-[11px] font-black text-slate-800">
+                    {language === 'te' ? d.day_te : language === 'hi' ? d.day_hi : d.day}
+                  </div>
+                  <IconComponent className={`w-7 h-7 my-1.5 ${d.color}`} />
+                  <div className="text-xs font-black text-slate-900 font-outfit">{d.temp}</div>
+                  <div className="text-[10px] text-slate-500 font-semibold mt-0.5">
+                    {language === 'te' ? d.condition_te : language === 'hi' ? d.condition_hi : d.condition}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Smart Agricultural Weather Advisories */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+          
+          {/* 1. Harvest Drying */}
+          <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex items-start gap-3">
+            <span className="text-xl">🌾</span>
+            <div className="text-xs">
+              <div className="font-extrabold text-emerald-900">
+                {language === 'te' ? 'పంట ఎండబెట్టడం (Drying)' : language === 'hi' ? 'फसल सुखाना एवं नमी नियंत्रण' : 'Harvest Drying Advisory'}
+              </div>
+              <p className="text-slate-600 mt-0.5 font-medium leading-relaxed">
+                {language === 'te' ? 'ఎండ తీవ్రత బాగుంది. వరి/పత్తి తేమను 14% లోపుకు తగ్గించడానికి ఉత్తమ సమయం.' : language === 'hi' ? 'अच्छी धूप उपलब्ध है। एमएसपी मानक (14% से कम नमी) के लिए धान सुखाने का सही समय।' : 'Clear sun conditions. Ideal for sun-drying harvested Paddy/Cotton to reach <14% MSP moisture norm.'}
+              </p>
+            </div>
+          </div>
+
+          {/* 2. Spraying Window */}
+          <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 flex items-start gap-3">
+            <span className="text-xl">🚜</span>
+            <div className="text-xs">
+              <div className="font-extrabold text-amber-900">
+                {language === 'te' ? 'పురుగుమందుల స్ప్రే సమయం' : language === 'hi' ? 'कीटनाशक छिड़काव समय' : 'Spraying Window Alert'}
+              </div>
+              <p className="text-slate-600 mt-0.5 font-medium leading-relaxed">
+                {language === 'te' ? 'గాలి వేగం తక్కువగా ఉంది. ఉదయం 7:00 నుండి 10:30 వరకు స్ప్రే చేయడానికి అనుకూలం.' : language === 'hi' ? 'सुबह 7:00 से 10:30 बजे तक कम हवा में कीटनाशक व पोषक तत्वों का छिड़काव करें।' : 'Wind speed is low (<12 km/h). Safe spraying window is 07:00 AM – 10:30 AM.'}
+              </p>
+            </div>
+          </div>
+
+          {/* 3. Irrigation */}
+          <div className="p-3.5 rounded-2xl bg-sky-50/80 border border-sky-200 flex items-start gap-3">
+            <span className="text-xl">💧</span>
+            <div className="text-xs">
+              <div className="font-extrabold text-sky-900">
+                {language === 'te' ? 'నీటిపారుదల సలహా' : language === 'hi' ? 'सिंचाई सलाह' : 'Irrigation Advisory'}
+              </div>
+              <p className="text-slate-600 mt-0.5 font-medium leading-relaxed">
+                {language === 'te' ? 'నేలలో తేమ సాధారణంగా ఉంది. కూరగాయలు మరియు ఉద్యానవన పంటలకు సాయంత్రం తక్కువ నీరు చాలు.' : language === 'hi' ? 'मृदा नमी सामान्य है। शाम के समय ड्रिप सिंचाई से हल्की पानी की खुराक दें।' : 'Soil moisture normal. Light evening drip irrigation recommended for vegetables and orchards.'}
+              </p>
+            </div>
+          </div>
+
         </div>
 
       </div>
