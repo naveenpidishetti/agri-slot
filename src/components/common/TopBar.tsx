@@ -73,9 +73,14 @@ export const TopBar: React.FC<TopBarProps> = ({
               aria-label="Select Language"
               className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
             >
-              <option value="en" className="bg-white text-slate-900">English</option>
-              <option value="te" className="bg-white text-slate-900">తెలుగు</option>
-              <option value="hi" className="bg-white text-slate-900">हिंदी</option>
+              <option value="en" className="bg-white text-slate-900">English (EN)</option>
+              <option value="te" className="bg-white text-slate-900">తెలుగు (TE)</option>
+              <option value="hi" className="bg-white text-slate-900">हिन्दी (HI)</option>
+              <option value="ta" className="bg-white text-slate-900">தமிழ் (TA)</option>
+              <option value="kn" className="bg-white text-slate-900">ಕನ್ನಡ (KN)</option>
+              <option value="mr" className="bg-white text-slate-900">मराठी (MR)</option>
+              <option value="pa" className="bg-white text-slate-900">ਪੰਜਾਬੀ (PA)</option>
+              <option value="bn" className="bg-white text-slate-900">বাংলা (BN)</option>
             </select>
           </div>
 

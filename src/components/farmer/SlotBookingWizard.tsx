@@ -26,7 +26,9 @@ import {
   VolumeX,
   Bot,
   RotateCcw,
-  Radio
+  Radio,
+  ShieldCheck,
+  Lock
 } from 'lucide-react';
 
 interface SlotBookingWizardProps {
@@ -35,19 +37,19 @@ interface SlotBookingWizardProps {
 }
 
 const DEFAULT_CROPS: Crop[] = [
-  { id: 'crop-paddy', name: 'Paddy (వరి / Rice)', code: 'PAD-01', category: 'Cereal', msp_price_per_quintal: 2300, max_moisture_percent: 14.0 },
-  { id: 'crop-wheat', name: 'Wheat (గోధుమలు / Gehun)', code: 'WHT-02', category: 'Cereal', msp_price_per_quintal: 2275, max_moisture_percent: 12.0 },
-  { id: 'crop-cotton', name: 'Cotton (పత్తి / Kapas)', code: 'COT-04', category: 'Fiber', msp_price_per_quintal: 7020, max_moisture_percent: 8.0 },
-  { id: 'crop-maize', name: 'Maize (మొక్కజొన్న / Makka)', code: 'MAZ-03', category: 'Coarse Cereal', msp_price_per_quintal: 2090, max_moisture_percent: 14.0 },
-  { id: 'crop-chilli', name: 'Chilli (మిర్చి / Mirchi)', code: 'CHL-08', category: 'Spices', msp_price_per_quintal: 18200, max_moisture_percent: 10.0 },
-  { id: 'crop-turmeric', name: 'Turmeric (పసుపు / Haldi)', code: 'TUR-07', category: 'Spices', msp_price_per_quintal: 13500, max_moisture_percent: 10.0 },
-  { id: 'crop-soybean', name: 'Soybean (సోయాబీన్)', code: 'SOY-05', category: 'Oilseed', msp_price_per_quintal: 4892, max_moisture_percent: 10.0 },
-  { id: 'crop-groundnut', name: 'Groundnut (వేరుశనగ / పల్లీలు)', code: 'GND-09', category: 'Oilseed', msp_price_per_quintal: 6783, max_moisture_percent: 8.0 },
-  { id: 'crop-mustard', name: 'Mustard (ఆవాలు / Sarson)', code: 'MST-10', category: 'Oilseed', msp_price_per_quintal: 5650, max_moisture_percent: 8.0 },
-  { id: 'crop-onion', name: 'Onion (ఉల్లిపాయ / Pyaz)', code: 'ONN-19', category: 'Horticulture', msp_price_per_quintal: 2450, max_moisture_percent: 14.0 },
-  { id: 'crop-tomato', name: 'Tomato (టమోటా / Tamatar)', code: 'TMT-20', category: 'Horticulture', msp_price_per_quintal: 1850, max_moisture_percent: 14.0 },
-  { id: 'crop-potato', name: 'Potato (బంగాళాదుంప / Aloo)', code: 'POT-21', category: 'Horticulture', msp_price_per_quintal: 1650, max_moisture_percent: 14.0 },
-  { id: 'crop-sugarcane', name: 'Sugarcane (చెరకు / Ganna)', code: 'SGC-16', category: 'Commercial', msp_price_per_quintal: 340, max_moisture_percent: 18.0 }
+  { id: 'crop-paddy', name: 'Paddy (వరి / धान / Rice)', code: 'PAD-01', category: 'Cereal', msp_price_per_quintal: 2300, max_moisture_percent: 14.0 },
+  { id: 'crop-wheat', name: 'Wheat (గోధుమలు / गेहूं)', code: 'WHT-02', category: 'Cereal', msp_price_per_quintal: 2275, max_moisture_percent: 12.0 },
+  { id: 'crop-cotton', name: 'Cotton (పత్తి / कपास)', code: 'COT-04', category: 'Fiber', msp_price_per_quintal: 7020, max_moisture_percent: 8.0 },
+  { id: 'crop-maize', name: 'Maize (మొక్కజొన్న / मक्का)', code: 'MAZ-03', category: 'Coarse Cereal', msp_price_per_quintal: 2090, max_moisture_percent: 14.0 },
+  { id: 'crop-chilli', name: 'Chilli (మిర్చి / मिर्च)', code: 'CHL-08', category: 'Spices', msp_price_per_quintal: 18200, max_moisture_percent: 10.0 },
+  { id: 'crop-turmeric', name: 'Turmeric (పసుపు / हल्दी)', code: 'TUR-07', category: 'Spices', msp_price_per_quintal: 13500, max_moisture_percent: 10.0 },
+  { id: 'crop-soybean', name: 'Soybean (సోయాబీన్ / सोयाबीन)', code: 'SOY-05', category: 'Oilseed', msp_price_per_quintal: 4892, max_moisture_percent: 10.0 },
+  { id: 'crop-groundnut', name: 'Groundnut (వేరుశనగ / मूंगफली)', code: 'GND-09', category: 'Oilseed', msp_price_per_quintal: 6783, max_moisture_percent: 8.0 },
+  { id: 'crop-mustard', name: 'Mustard (ఆవాలు / सरसों)', code: 'MST-10', category: 'Oilseed', msp_price_per_quintal: 5650, max_moisture_percent: 8.0 },
+  { id: 'crop-onion', name: 'Onion (ఉల్లిపాయ / प्याज)', code: 'ONN-19', category: 'Horticulture', msp_price_per_quintal: 2450, max_moisture_percent: 14.0 },
+  { id: 'crop-tomato', name: 'Tomato (టమోటా / टमाटर)', code: 'TMT-20', category: 'Horticulture', msp_price_per_quintal: 1850, max_moisture_percent: 14.0 },
+  { id: 'crop-potato', name: 'Potato (బంగాళాదుంప / आलू)', code: 'POT-21', category: 'Horticulture', msp_price_per_quintal: 1650, max_moisture_percent: 14.0 },
+  { id: 'crop-sugarcane', name: 'Sugarcane (చెరకు / गन्ना)', code: 'SGC-16', category: 'Commercial', msp_price_per_quintal: 340, max_moisture_percent: 18.0 }
 ];
 
 export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, onBookingSuccess }) => {
@@ -88,13 +90,14 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
   }[]>([]);
 
   // =========================================================================
-  // 🎙️ VOICE ASSISTANT STATE & REFS
+  // 🎙️ VOICE ASSISTANT & PERMISSION STATE
   // =========================================================================
   const [isVoiceActive, setIsVoiceActive] = useState<boolean>(true);
+  const [micPermission, setMicPermission] = useState<'granted' | 'denied' | 'prompt' | 'requesting'>('prompt');
   const [isListening, setIsListening] = useState<boolean>(false);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const [voiceTranscript, setVoiceTranscript] = useState<string>('');
-  const [voiceFeedback, setVoiceFeedback] = useState<string>('Voice Assistant Active. Speak your choices anytime.');
+  const [voiceFeedback, setVoiceFeedback] = useState<string>('Voice Assistant Ready. Speak your choices anytime.');
 
   const stepRef = useRef(step);
   const cropsRef = useRef(crops);
@@ -198,6 +201,67 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
   };
 
   // =========================================================================
+  // 🔐 EXPLICIT MICROPHONE PERMISSION REQUEST HANDLER
+  // =========================================================================
+  const requestMicrophonePermission = async () => {
+    try {
+      setMicPermission('requesting');
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Permission successfully granted!
+        setMicPermission('granted');
+        // Stop audio tracks immediately after obtaining permission
+        stream.getTracks().forEach(track => track.stop());
+        setIsVoiceActive(true);
+        startListening();
+        speakText(
+          languageRef.current === 'te' 
+            ? 'మైక్రోఫోన్ అనుమతి మంజూరు చేయబడింది. వాయిస్ అసిస్టెంట్ సిద్ధంగా ఉంది.'
+            : languageRef.current === 'hi'
+            ? 'माइक अनुमति स्वीकृत हो गई है। वॉयस असिस्टेंट तैयार है।'
+            : 'Microphone permission granted. Kisan Voice Assistant is active.'
+        );
+      } else {
+        setMicPermission('granted');
+        startListening();
+      }
+    } catch (err: any) {
+      console.warn('Microphone permission denied or prompt closed:', err);
+      setMicPermission('denied');
+    }
+  };
+
+  // Check initial permission status if supported
+  useEffect(() => {
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'microphone' as any })
+        .then((permissionStatus) => {
+          setMicPermission(permissionStatus.state as any);
+          permissionStatus.onchange = () => {
+            setMicPermission(permissionStatus.state as any);
+          };
+        })
+        .catch(() => {
+          // Ignore if permission query not supported
+        });
+    }
+  }, []);
+
+  // Helper to map active language to standard BCP-47 tag
+  const getBCP47Tag = (lang: string) => {
+    switch (lang) {
+      case 'te': return 'te-IN';
+      case 'hi': return 'hi-IN';
+      case 'ta': return 'ta-IN';
+      case 'kn': return 'kn-IN';
+      case 'mr': return 'mr-IN';
+      case 'pa': return 'pa-IN';
+      case 'bn': return 'bn-IN';
+      default: return 'en-IN';
+    }
+  };
+
+  // =========================================================================
   // 🔊 SPEECH SYNTHESIS (TTS)
   // =========================================================================
   const stopSpeech = useCallback(() => {
@@ -212,16 +276,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
     
     stopSpeech();
     const utterance = new SpeechSynthesisUtterance(text);
-    
-    // Choose appropriate locale
-    if (languageRef.current === 'te') {
-      utterance.lang = 'te-IN';
-    } else if (languageRef.current === 'hi') {
-      utterance.lang = 'hi-IN';
-    } else {
-      utterance.lang = 'en-IN';
-    }
-    
+    utterance.lang = getBCP47Tag(languageRef.current);
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
 
@@ -232,7 +287,6 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
     utterance.onend = () => {
       setIsSpeaking(false);
       if (onEndCallback) onEndCallback();
-      // Resume listening after speaking ends
       startListening();
     };
 
@@ -245,7 +299,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
   }, [stopSpeech]);
 
   // =========================================================================
-  // 🎙️ STEP VOICE PROMPT ANNOUNCER
+  // 🎙️ MULTI-LANGUAGE STEP VOICE PROMPT ANNOUNCER
   // =========================================================================
   const triggerStepVoicePrompt = useCallback((stepNumber: number) => {
     if (!isVoiceActiveRef.current) return;
@@ -255,59 +309,53 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
 
     switch (stepNumber) {
       case 1:
-        text = lang === 'te'
-          ? 'నమస్కారం! పంటల స్లాట్ బుకింగ్‌కు స్వాగతం. మీరు ఏ పంట విక్రయించాలనుకుంటున్నారు? వరి, పత్తి, గోధుమలు, మిర్చి లేదా పసుపు అని చెప్పండి.'
-          : lang === 'hi'
-          ? 'नमस्ते! मंडी स्लॉट बुकिंग में आपका स्वागत है। आप कौन सी फसल बेचना चाहते हैं? कृपया धान, कपास, गेहूं, मक्का या मिर्च बोलें।'
-          : 'Welcome to Mandi Slot Booking. Which crop would you like to sell? You can say Paddy, Cotton, Wheat, Maize, Chilli, or Turmeric.';
+        if (lang === 'te') text = 'నమస్కారం! పంటల స్లాట్ బుకింగ్‌కు స్వాగతం. మీరు ఏ పంట విక్రయించాలనుకుంటున్నారు? వరి, పత్తి, గోధుమలు, మిర్చి లేదా పసుపు అని చెప్పండి.';
+        else if (lang === 'hi') text = 'नमस्ते! मंडी स्लॉट बुकिंग में आपका स्वागत है। आप कौन सी फसल बेचना चाहते हैं? धान, कपास, गेहूं, मक्का या मिर्च बोलें।';
+        else if (lang === 'ta') text = 'வணக்கம்! மண்டி ஸ்லாட் முன்பதிவுக்கு வரவேற்கிறோம். எந்தப் பயிரை விற்க விரும்புகிறீர்கள்? நெல், பருத்தி, கோதுமை அல்லது சோளம் என்று சொல்லுங்கள்.';
+        else if (lang === 'kn') text = 'ನಮಸ್ಕಾರ! ಮಂಡಿ ಸ್ಲಾಟ್ ಬುಕಿಂಗ್‌ಗೆ ಸುಸ್ವಾಗತ. ನೀವು ಯಾವ ಬೆಳೆಯನ್ನು ಮಾರಾಟ ಮಾಡಲು ಬಯಸುತ್ತೀರಿ? ಭತ್ತ, ಹತ್ತಿ, ಗೋಧಿ ಅಥವಾ ಮೆಕ್ಕೆಜೋಳ ಎಂದು ಹೇಳಿ.';
+        else if (lang === 'mr') text = 'नमस्कार! मंडी स्लॉट बुकिंगमध्ये आपले स्वागत आहे. आपण कोणते पीक विकू इच्छिता? भात, कापूस, गहू किंवा मका बोला.';
+        else if (lang === 'pa') text = 'ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ! ਮੰਡੀ ਸਲਾਟ ਬੁਕਿੰਗ ਵਿੱਚ ਤੁਹਾਡਾ ਸਵਾਗਤ ਹੈ। ਤੁਸੀਂ ਕਿਹੜੀ ਫ਼ਸਲ ਵੇਚਣਾ ਚਾਹੁੰਦੇ ਹੋ? ਝੋਨਾ, ਕਪਾਹ, ਕਣਕ ਜਾਂ ਮੱਕੀ ਬੋਲੋ।';
+        else if (lang === 'bn') text = 'নমস্কার! মান্ডি স্লট বুকিংয়ে স্বাগতম। আপনি কোন ফসল বিক্রি করতে চান? ধান, গম, তুলা বা ভুট্টা বলুন।';
+        else text = 'Welcome to Mandi Slot Booking. Which crop would you like to sell? You can say Paddy, Cotton, Wheat, Maize, Chilli, or Turmeric.';
         break;
 
       case 2:
-        text = lang === 'te'
-          ? `ఎంచుకున్న పంట ${selectedCropRef.current?.name || 'వరి'}. దయచేసి మీ పంట పరిమాణాన్ని క్వింటాళ్లలో చెప్పండి. ఉదాహరణకు 50 క్వింటాళ్లు లేదా 100 క్వింటాళ్లు.`
-          : lang === 'hi'
-          ? `चुनी गई फसल ${selectedCropRef.current?.name || 'धान'} है। कृपया अपनी फसल की मात्रा क्विंटल में बताएं, जैसे 50 क्विंटल या 100 क्विंटल।`
-          : `Selected crop is ${selectedCropRef.current?.name || 'Paddy'}. Please speak your harvest quantity in quintals, for example 50 quintals or 100 quintals.`;
+        if (lang === 'te') text = `ఎంచుకున్న పంట ${selectedCropRef.current?.name || 'వరి'}. దయచేసి మీ పంట పరిమాణాన్ని క్వింటాళ్లలో చెప్పండి. ఉదాహరణకు 50 క్వింటాళ్లు లేదా 100 క్వింటాళ్లు.`;
+        else if (lang === 'hi') text = `चुनी गई फसल ${selectedCropRef.current?.name || 'धान'} है। कृपया अपनी फसल की मात्रा क्विंटल में बताएं, जैसे 50 क्विंटल या 100 क्विंटल।`;
+        else if (lang === 'ta') text = `தேர்ந்தெடுக்கப்பட்ட பயிர் ${selectedCropRef.current?.name || 'நெல்'}. அறுவடை அளவை குவிண்டாலில் சொல்லுங்கள், எ.கா. 50 குவிண்டால்.`;
+        else if (lang === 'kn') text = `ಆಯ್ಕೆಮಾಡಿದ ಬೆಳೆ ${selectedCropRef.current?.name || 'ಭತ್ತ'}. ಇಳುವರಿ ಪ್ರಮಾಣವನ್ನು ಕ್ವಿಂಟಾಲ್‌ನಲ್ಲಿ ತಿಳಿಸಿ, ಉದಾಹರಣೆಗೆ 50 ಕ್ವಿಂಟಾಲ್.`;
+        else if (lang === 'mr') text = `निवडलेले पीक ${selectedCropRef.current?.name || 'भात'}. कृपया पिकाचे प्रमाण क्विंटलमध्ये सांगा, उदा. ५० क्विंटल.`;
+        else text = `Selected crop is ${selectedCropRef.current?.name || 'Paddy'}. Please speak your harvest quantity in quintals, for example 50 quintals or 100 quintals.`;
         break;
 
       case 3:
-        text = lang === 'te'
-          ? `మీ ఫారమ్ స్థానం ${locationRef.current.district}, ${locationRef.current.state}. కొనసాగించడానికి నెక్స్ట్ అని చెప్పండి.`
-          : lang === 'hi'
-          ? `आपका जिला ${locationRef.current.district}, ${locationRef.current.state} है। आगे बढ़ने के लिए नेक्स्ट बोलें।`
-          : `Your farm location is set to ${locationRef.current.district}, ${locationRef.current.state}. Say Next to continue.`;
+        if (lang === 'te') text = `మీ ఫారమ్ స్థానం ${locationRef.current.district}, ${locationRef.current.state}. కొనసాగించడానికి నెక్స్ట్ అని చెప్పండి.`;
+        else if (lang === 'hi') text = `आपका जिला ${locationRef.current.district}, ${locationRef.current.state} है। आगे बढ़ने के लिए नेक्स्ट बोलें।`;
+        else text = `Your farm location is ${locationRef.current.district}, ${locationRef.current.state}. Say Next to continue.`;
         break;
 
       case 4:
-        text = lang === 'te'
-          ? 'మీ డిజిటల్ గేట్ పాస్ టోకెన్ మీ ఈమెయిల్‌కు పంపబడుతుంది. AI సిఫార్సు కోసం నెక్స్ట్ అని చెప్పండి.'
-          : lang === 'hi'
-          ? 'आपका डिजिटल गेट पास टोकन आपके ईमेल पर भेजा जाएगा। एआई मंडी सुझाव के लिए नेक्स्ट बोलें।'
-          : 'Your digital QR gate pass will be sent to your email. Say Next to get AI Mandi recommendation.';
+        if (lang === 'te') text = 'మీ డిజిటల్ గేట్ పాస్ టోకెన్ మీ ఈమెయిల్‌కు పంపబడుతుంది. AI సిఫార్సు కోసం నెక్స్ట్ అని చెప్పండి.';
+        else if (lang === 'hi') text = 'आपका डिजिटल गेट पास टोकन आपके ईमेल पर भेजा जाएगा। एआई मंडी सुझाव के लिए नेक्स्ट बोलें।';
+        else text = 'Your digital QR gate pass will be sent to your email. Say Next to get AI Mandi match.';
         break;
 
       case 5:
-        text = lang === 'te'
-          ? `మేము సిఫార్సు చేస్తున్న మార్కెట్ కేంద్రం ${selectedCenterRef.current?.name || 'APMC సెంటర్'}. స్లాట్ ఎంపికకు నెక్స్ట్ అని చెప్పండి.`
-          : lang === 'hi'
-          ? `अनुशंसित मंडी केंद्र ${selectedCenterRef.current?.name || 'एपीएमसी केंद्र'} है। स्लॉट चुनने के लिए नेक्स्ट बोलें।`
-          : `We recommend ${selectedCenterRef.current?.name || 'APMC Procurement Center'}. Say Next to choose your arrival time slot.`;
+        if (lang === 'te') text = `మేము సిఫార్సు చేస్తున్న మార్కెట్ కేంద్రం ${selectedCenterRef.current?.name || 'APMC సెంటర్'}. స్లాట్ ఎంపికకు నెక్స్ట్ అని చెప్పండి.`;
+        else if (lang === 'hi') text = `अनुशंसित मंडी केंद्र ${selectedCenterRef.current?.name || 'एपीएमसी केंद्र'} है। स्लॉट चुनने के लिए नेक्स्ट बोलें।`;
+        else text = `We recommend ${selectedCenterRef.current?.name || 'APMC Procurement Center'}. Say Next to choose your arrival time slot.`;
         break;
 
       case 6:
-        text = lang === 'te'
-          ? `తేదీ ${selectedDateRef.current}. అందుబాటులో ఉన్న సమయ స్లాట్ ${selectedSlotRef.current}. కొనసాగించడానికి కన్ఫర్మ్ స్లాట్ లేదా నెక్స్ట్ అని చెప్పండి.`
-          : lang === 'hi'
-          ? `तारीख ${selectedDateRef.current} है। उपलब्ध समय स्लॉट ${selectedSlotRef.current} है। आगे बढ़ने के लिए नेक्स्ट बोलें।`
-          : `Arrival date is ${selectedDateRef.current}. Selected slot is ${selectedSlotRef.current}. Say Next or Confirm to review.`;
+        if (lang === 'te') text = `తేదీ ${selectedDateRef.current}. అందుబాటులో ఉన్న సమయ స్లాట్ ${selectedSlotRef.current}. కొనసాగించడానికి నెక్స్ట్ అని చెప్పండి.`;
+        else if (lang === 'hi') text = `तारीख ${selectedDateRef.current} है। उपलब्ध समय स्लॉट ${selectedSlotRef.current} है। आगे बढ़ने के लिए नेक्स्ट बोलें।`;
+        else text = `Arrival date is ${selectedDateRef.current}. Selected slot is ${selectedSlotRef.current}. Say Next to review.`;
         break;
 
       case 7:
-        text = lang === 'te'
-          ? `దయచేసి మీ బుకింగ్ వివరాలు సరిచూసుకోండి. ${selectedCropRef.current?.name}, ${quantityRef.current} క్వింటాళ్లు. టోకెన్ పొందడానికి కన్ఫర్మ్ బుకింగ్ అని చెప్పండి.`
-          : lang === 'hi'
-          ? `कृपया अपनी बुकिंग जांचें। ${selectedCropRef.current?.name}, ${quantityRef.current} क्विंटल। टोकन बनाने के लिए कन्फर्म बुकिंग बोलें।`
-          : `Please review your booking details: ${selectedCropRef.current?.name}, ${quantityRef.current} Quintals. Say Confirm Booking to generate your token.`;
+        if (lang === 'te') text = `దయచేసి మీ బుకింగ్ వివరాలు సరిచూసుకోండి. ${selectedCropRef.current?.name}, ${quantityRef.current} క్వింటాళ్లు. టోకెన్ పొందడానికి కన్ఫర్మ్ బుకింగ్ అని చెప్పండి.`;
+        else if (lang === 'hi') text = `कृपया अपनी बुकिंग जांचें। ${selectedCropRef.current?.name}, ${quantityRef.current} क्विंटल। टोकन बनाने के लिए कन्फर्म बुकिंग बोलें।`;
+        else text = `Please review your booking details: ${selectedCropRef.current?.name}, ${quantityRef.current} Quintals. Say Confirm Booking to generate your token pass.`;
         break;
 
       default:
@@ -318,16 +366,15 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
     speakText(text);
   }, [speakText]);
 
-  // Announce when step changes
   useEffect(() => {
     const timer = setTimeout(() => {
       triggerStepVoicePrompt(step);
-    }, 400);
+    }, 450);
     return () => clearTimeout(timer);
   }, [step, triggerStepVoicePrompt]);
 
   // =========================================================================
-  // 🧠 VOICE COMMAND PROCESSOR & MATCHING
+  // 🧠 MULTI-LANGUAGE VOICE COMMAND INTERPRETER
   // =========================================================================
   const handleVoiceCommand = useCallback((rawTranscript: string) => {
     const text = rawTranscript.toLowerCase().trim();
@@ -335,70 +382,99 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
 
     setVoiceTranscript(rawTranscript);
 
-    // Global Navigation Commands
-    if (text.includes('next') || text.includes('continue') || text.includes('proceed') || text.includes('తర్వాత') || text.includes('ముందుకు') || text.includes('आगे') || text.includes('సరే')) {
+    // 1. Navigation Commands across All Languages
+    if (
+      text.includes('next') || text.includes('continue') || text.includes('proceed') ||
+      text.includes('తర్వాత') || text.includes('ముందుకు') || text.includes('आगे') ||
+      text.includes('அடுத்து') || text.includes('ಮುಂದೆ') || text.includes('पुढे') ||
+      text.includes('ਅੱਗੇ') || text.includes('পরবর্তী') || text.includes('సరే') || text.includes('ठीक है')
+    ) {
       const current = stepRef.current;
-      if (current === 1 && selectedCropRef.current) {
-        setStep(2);
-      } else if (current === 2) {
-        setStep(3);
-      } else if (current === 3) {
-        setStep(4);
-      } else if (current === 4) {
-        handleFetchAiRecommendation();
-      } else if (current === 5 && selectedCenterRef.current) {
-        setStep(6);
-      } else if (current === 6 && selectedSlotRef.current) {
-        setStep(7);
-      } else if (current === 7) {
-        handleConfirmBooking();
-      }
+      if (current === 1 && selectedCropRef.current) setStep(2);
+      else if (current === 2) setStep(3);
+      else if (current === 3) setStep(4);
+      else if (current === 4) handleFetchAiRecommendation();
+      else if (current === 5 && selectedCenterRef.current) setStep(6);
+      else if (current === 6 && selectedSlotRef.current) setStep(7);
+      else if (current === 7) handleConfirmBooking();
       return;
     }
 
-    if (text.includes('back') || text.includes('previous') || text.includes('వెనుకకు') || text.includes('పీచే')) {
+    if (
+      text.includes('back') || text.includes('previous') ||
+      text.includes('వెనుకకు') || text.includes('పీచే') ||
+      text.includes('பின்னால்') || text.includes('ಹಿಂದೆ') ||
+      text.includes('मागे') || text.includes('ਪਿੱਛੇ') || text.includes('পিছনে')
+    ) {
       setStep(prev => Math.max(1, prev - 1));
       return;
     }
 
-    if (text.includes('repeat') || text.includes('again') || text.includes('మళ్లీ చెప్పు') || text.includes('ఫిర్ సే')) {
+    if (text.includes('repeat') || text.includes('again') || text.includes('మళ్లీ చెప్పు') || text.includes('फिर से')) {
       triggerStepVoicePrompt(stepRef.current);
       return;
     }
 
-    // Step-Specific Matching
     const currentStep = stepRef.current;
 
-    // --- STEP 1: CROP MATCHING ---
+    // --- STEP 1: CROP SELECTION ---
     if (currentStep === 1) {
       const cropList = cropsRef.current;
       let matchedCrop: Crop | null = null;
 
-      if (text.includes('paddy') || text.includes('rice') || text.includes('వరి') || text.includes('dhan') || text.includes('వరి పంట') || text.includes('ధాన్యం')) {
+      // Paddy / Rice in multiple languages
+      if (
+        text.includes('paddy') || text.includes('rice') || text.includes('వరి') || 
+        text.includes('dhan') || text.includes('धान') || text.includes('நெல்') || 
+        text.includes('ಭತ್ತ') || text.includes('भात') || text.includes('ਝੋਨਾ') || text.includes('ধান')
+      ) {
         matchedCrop = cropList.find(c => c.id === 'crop-paddy') || cropList[0];
-      } else if (text.includes('cotton') || text.includes('పత్తి') || text.includes('kapas')) {
+      } else if (
+        text.includes('cotton') || text.includes('పత్తి') || text.includes('कपास') || 
+        text.includes('பருத்தி') || text.includes('ಹತ್ತಿ') || text.includes('कापूस') || 
+        text.includes('ਕਪਾਹ') || text.includes('তুলা')
+      ) {
         matchedCrop = cropList.find(c => c.id === 'crop-cotton') || null;
-      } else if (text.includes('wheat') || text.includes('గోధుమ') || text.includes('gehun')) {
+      } else if (
+        text.includes('wheat') || text.includes('గోధుమ') || text.includes('गेहूं') || 
+        text.includes('கோதுமை') || text.includes('ಗೋಧಿ') || text.includes('गहू') || 
+        text.includes('ਕਣਕ') || text.includes('গম')
+      ) {
         matchedCrop = cropList.find(c => c.id === 'crop-wheat') || null;
-      } else if (text.includes('maize') || text.includes('corn') || text.includes('మొక్కజొన్న') || text.includes('makka')) {
+      } else if (
+        text.includes('maize') || text.includes('corn') || text.includes('మొక్కజొన్న') || 
+        text.includes('मक्का') || text.includes('சோளம்') || text.includes('ಮೆಕ್ಕೆಜೋಳ') || 
+        text.includes('मका') || text.includes('ਮੱਕੀ') || text.includes('ভুট্টা')
+      ) {
         matchedCrop = cropList.find(c => c.id === 'crop-maize') || null;
-      } else if (text.includes('chilli') || text.includes('mirchi') || text.includes('మిర్చి')) {
+      } else if (
+        text.includes('chilli') || text.includes('mirchi') || text.includes('మిర్చి') || 
+        text.includes('मिर्च') || text.includes('மிளகாய்') || text.includes('ಮೆಣಸಿನಕಾಯಿ') || 
+        text.includes('मिरची') || text.includes('ਮਿਰਚ') || text.includes('লঙ্কা')
+      ) {
         matchedCrop = cropList.find(c => c.id === 'crop-chilli') || null;
-      } else if (text.includes('turmeric') || text.includes('పసుపు') || text.includes('haldi')) {
+      } else if (
+        text.includes('turmeric') || text.includes('పసుపు') || text.includes('हल्दी') || 
+        text.includes('மஞ்சள்') || text.includes('ಅರಿಶಿನ') || text.includes('हळद') || 
+        text.includes('ਹਲਦੀ') || text.includes('হলুদ')
+      ) {
         matchedCrop = cropList.find(c => c.id === 'crop-turmeric') || null;
-      } else if (text.includes('soybean') || text.includes('సోయా')) {
+      } else if (text.includes('soybean') || text.includes('సోయా') || text.includes('सोयाबीन')) {
         matchedCrop = cropList.find(c => c.id === 'crop-soybean') || null;
-      } else if (text.includes('groundnut') || text.includes('peanut') || text.includes('వేరుశనగ') || text.includes('పల్లీలు')) {
+      } else if (
+        text.includes('groundnut') || text.includes('peanut') || text.includes('వేరుశనగ') || 
+        text.includes('పల్లీలు') || text.includes('मूंगफली') || text.includes('வேர்க்கடலை') || text.includes('ಕಡಲೆಕಾಯಿ')
+      ) {
         matchedCrop = cropList.find(c => c.id === 'crop-groundnut') || null;
-      } else if (text.includes('mustard') || text.includes('ఆవాలు') || text.includes('sarson')) {
+      } else if (text.includes('mustard') || text.includes('ఆవాలు') || text.includes('सरसों')) {
         matchedCrop = cropList.find(c => c.id === 'crop-mustard') || null;
-      } else if (text.includes('onion') || text.includes('ఉల్లిపాయ') || text.includes('pyaz')) {
+      } else if (text.includes('onion') || text.includes('ఉల్లిపాయ') || text.includes('प्याज') || text.includes('வெங்காயம்') || text.includes('ಈರುಳ್ಳಿ')) {
         matchedCrop = cropList.find(c => c.id === 'crop-onion') || null;
-      } else if (text.includes('tomato') || text.includes('టమోటా') || text.includes('tamatar')) {
+      } else if (text.includes('tomato') || text.includes('టమోటా') || text.includes('टमाटर') || text.includes('தக்காளி') || text.includes('ಟೊಮೆಟೊ')) {
         matchedCrop = cropList.find(c => c.id === 'crop-tomato') || null;
-      } else if (text.includes('potato') || text.includes('బంగాళాదుంప') || text.includes('aloo')) {
+      } else if (text.includes('potato') || text.includes('బంగాళాదుంప') || text.includes('आलू') || text.includes('உருளைக்கிழங்கு') || text.includes('ಆಲೂಗಡ್ಡೆ')) {
         matchedCrop = cropList.find(c => c.id === 'crop-potato') || null;
-      } else if (text.includes('sugarcane') || text.includes('చెరకు') || text.includes('ganna')) {
+      } else if (text.includes('sugarcane') || text.includes('చెరకు') || text.includes('गन्ना') || text.includes('கரும்பு') || text.includes('ಕಬ್ಬು')) {
         matchedCrop = cropList.find(c => c.id === 'crop-sugarcane') || null;
       }
 
@@ -414,25 +490,30 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
 
     // --- STEP 2: QUANTITY EXTRACTION ---
     if (currentStep === 2) {
-      // Extract numbers like "50 quintals", "100", "వంద", "యాభై"
       let parsedNum: number | null = null;
       const numMatch = text.match(/\d+/);
 
       if (numMatch) {
         parsedNum = parseInt(numMatch[0], 10);
-      } else if (text.includes('hundred') || text.includes('వంద') || text.includes('सौ')) {
+      } else if (
+        text.includes('hundred') || text.includes('వంద') || text.includes('सौ') || 
+        text.includes('நூறு') || text.includes('ನೂರು') || text.includes('शंभर') || text.includes('ਸੌ') || text.includes('একশ')
+      ) {
         parsedNum = 100;
-      } else if (text.includes('fifty') || text.includes('యాభై') || text.includes('पचास')) {
+      } else if (
+        text.includes('fifty') || text.includes('యాభై') || text.includes('पचास') || 
+        text.includes('ஐம்பது') || text.includes('ಐವತ್ತು') || text.includes('पन्नास') || text.includes('ਪੰਜਾਹ') || text.includes('পঞ্চাশ')
+      ) {
         parsedNum = 50;
-      } else if (text.includes('twenty') || text.includes('ఇరవై') || text.includes('बीस')) {
+      } else if (text.includes('twenty') || text.includes('ఇరవై') || text.includes('बीस') || text.includes('இருபது') || text.includes('ಇಪ್ಪತ್ತು')) {
         parsedNum = 20;
-      } else if (text.includes('forty') || text.includes('నలభై') || text.includes('चालीस')) {
+      } else if (text.includes('forty') || text.includes('నలభై') || text.includes('चालीस') || text.includes('நாற்பது') || text.includes('ನಲವತ್ತು')) {
         parsedNum = 40;
-      } else if (text.includes('sixty') || text.includes('అరవై') || text.includes('साठ')) {
+      } else if (text.includes('sixty') || text.includes('అరవై') || text.includes('साठ') || text.includes('அறுபது') || text.includes('ಅರವತ್ತು')) {
         parsedNum = 60;
-      } else if (text.includes('eighty') || text.includes('ఎనభై') || text.includes('अस्सी')) {
+      } else if (text.includes('eighty') || text.includes('ఎనభై') || text.includes('अस्सी') || text.includes('எண்பது') || text.includes('ಎಂಬತ್ತು')) {
         parsedNum = 80;
-      } else if (text.includes('two hundred') || text.includes('రెండు వందలు') || text.includes('दो सौ')) {
+      } else if (text.includes('two hundred') || text.includes('రెండు వందలు') || text.includes('दो सौ') || text.includes('இருநூறு') || text.includes('ಇನ್ನೂರು')) {
         parsedNum = 200;
       }
 
@@ -446,28 +527,12 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
       return;
     }
 
-    // --- STEP 3: LOCATION ---
-    if (currentStep === 3) {
-      if (text.includes('next') || text.includes('ok') || text.includes('confirm') || text.includes('సరే')) {
-        setStep(4);
-      }
-      return;
-    }
-
-    // --- STEP 4: EMAIL ---
-    if (currentStep === 4) {
-      if (text.includes('next') || text.includes('send') || text.includes('ai') || text.includes('match') || text.includes('సరే')) {
-        handleFetchAiRecommendation();
-      }
-      return;
-    }
-
-    // --- STEP 5: CENTER SELECTION ---
+    // --- STEP 5: APMC PROCUREMENT CENTER ---
     if (currentStep === 5) {
-      if (text.includes('first') || text.includes('recommended') || text.includes('select') || text.includes('center') || text.includes('warangal') || text.includes('సరే')) {
+      if (text.includes('first') || text.includes('select') || text.includes('center') || text.includes('warangal') || text.includes('ఎంచుకో')) {
         if (centersRef.current.length > 0) {
           setSelectedCenter(centersRef.current[0]);
-          speakText(`Selected ${centersRef.current[0].name}. Moving to time slot.`, () => {
+          speakText(`Selected ${centersRef.current[0].name}. Moving to date and slot selection.`, () => {
             setStep(6);
           });
         }
@@ -475,10 +540,10 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
       return;
     }
 
-    // --- STEP 6: TIME SLOT SELECTION ---
+    // --- STEP 6: TIME SLOT ---
     if (currentStep === 6) {
-      if (text.includes('morning') || text.includes('11') || text.includes('10') || text.includes('slot') || text.includes('confirm') || text.includes('next')) {
-        speakText(`Selected slot ${selectedSlotRef.current}. Moving to confirmation.`, () => {
+      if (text.includes('morning') || text.includes('11') || text.includes('10') || text.includes('slot') || text.includes('confirm') || text.includes('స్లాట్')) {
+        speakText(`Selected slot ${selectedSlotRef.current}. Moving to final review.`, () => {
           setStep(7);
         });
       }
@@ -487,7 +552,10 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
 
     // --- STEP 7: CONFIRM BOOKING ---
     if (currentStep === 7) {
-      if (text.includes('confirm') || text.includes('book') || text.includes('yes') || text.includes('submit') || text.includes('ఖరారు') || text.includes('బుక్')) {
+      if (
+        text.includes('confirm') || text.includes('book') || text.includes('yes') || text.includes('submit') || 
+        text.includes('ఖరారు') || text.includes('బుక్') || text.includes('कन्फर्म') || text.includes('उறுதி') || text.includes('ದೃಢೀಕರಿಸಿ')
+      ) {
         handleConfirmBooking();
       }
       return;
@@ -495,14 +563,14 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
   }, [speakText]);
 
   // =========================================================================
-  // 🎙️ WEB SPEECH RECOGNITION (STT) LIFECYCLE
+  // 🎙️ SPEECH RECOGNITION (STT) ENGINE
   // =========================================================================
   const startListening = useCallback(() => {
     if (!isVoiceActiveRef.current || isSpeakingRef.current) return;
 
     const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRec) {
-      console.warn('Speech Recognition not supported in this browser.');
+      console.warn('Speech Recognition is not available on this browser.');
       return;
     }
 
@@ -514,17 +582,11 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
       const recognition = new SpeechRec();
       recognition.continuous = true;
       recognition.interimResults = true;
-
-      if (languageRef.current === 'te') {
-        recognition.lang = 'te-IN';
-      } else if (languageRef.current === 'hi') {
-        recognition.lang = 'hi-IN';
-      } else {
-        recognition.lang = 'en-IN';
-      }
+      recognition.lang = getBCP47Tag(languageRef.current);
 
       recognition.onstart = () => {
         setIsListening(true);
+        setMicPermission('granted');
       };
 
       recognition.onresult = (event: any) => {
@@ -549,30 +611,29 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
       };
 
       recognition.onerror = (e: any) => {
-        if (e.error !== 'no-speech') {
-          console.warn('Speech recognition error:', e.error);
+        if (e.error === 'not-allowed') {
+          setMicPermission('denied');
         }
         setIsListening(false);
       };
 
       recognition.onend = () => {
         setIsListening(false);
-        // Automatically restart if voice is still active and not speaking
         if (isVoiceActiveRef.current && !isSpeakingRef.current) {
           setTimeout(() => {
             try {
               recognition.start();
             } catch (err) {
-              // Ignore restart error
+              // Ignore restart collision
             }
-          }, 300);
+          }, 250);
         }
       };
 
       recognition.start();
       recognitionRef.current = recognition;
     } catch (e) {
-      console.warn('Could not initialize SpeechRecognition', e);
+      console.warn('Could not start speech recognition', e);
     }
   }, [handleVoiceCommand]);
 
@@ -591,9 +652,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
     };
   }, [isVoiceActive, startListening, stopSpeech]);
 
-  // =========================================================================
-  // ACTIONS: AI RECOMMENDATION & CONFIRM BOOKING
-  // =========================================================================
+  // Actions
   const handleFetchAiRecommendation = async () => {
     setLoading(true);
     setError(null);
@@ -679,12 +738,13 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
         </button>
 
         <div className="flex items-center gap-2">
-          {/* Voice Assistant Toggle Button */}
+          {/* Voice Assistant Toggle */}
           <button
             onClick={() => {
               const nextState = !isVoiceActive;
               setIsVoiceActive(nextState);
               if (!nextState) stopSpeech();
+              else requestMicrophonePermission();
             }}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer shadow-xs ${
               isVoiceActive
@@ -711,47 +771,78 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
         </div>
       </div>
 
+      {/* 🔐 EXPLICIT MICROPHONE PERMISSION BANNER (IF NEEDED) */}
+      {micPermission === 'denied' && (
+        <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-shake">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-200 text-amber-800 flex items-center justify-center flex-shrink-0">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xs font-black uppercase tracking-wider text-amber-900">
+                Microphone Permission Blocked / Needed
+              </div>
+              <p className="text-xs text-amber-800 font-medium mt-0.5">
+                Please allow microphone access in your browser to enable hands-free voice slot booking.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={requestMicrophonePermission}
+            className="px-4 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-black text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer flex-shrink-0"
+          >
+            <Mic className="w-4 h-4" />
+            <span>Grant Mic Permission</span>
+          </button>
+        </div>
+      )}
+
       {/* 🎙️ LIVE VOICE ASSISTANT INTERACTIVE STATUS BANNER */}
       {isVoiceActive && (
-        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-emerald-900 via-slate-900 to-teal-950 text-white border-2 border-emerald-500/40 shadow-xl shadow-emerald-950/20 relative overflow-hidden animate-in fade-in duration-300">
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 text-white border-2 border-emerald-500/40 shadow-xl shadow-emerald-950/20 relative overflow-hidden animate-in fade-in duration-300">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
             
             <div className="flex items-center gap-3.5">
               <div className="relative">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-white shadow-md transition-all ${
-                  isSpeaking
-                    ? 'bg-gradient-to-tr from-teal-500 to-emerald-400 scale-105 ring-4 ring-emerald-400/40 animate-pulse'
-                    : isListening
-                    ? 'bg-gradient-to-tr from-emerald-600 to-teal-600 ring-2 ring-emerald-300'
-                    : 'bg-slate-800 text-slate-400'
-                }`}>
+                <button
+                  onClick={requestMicrophonePermission}
+                  title="Click to speak or verify mic"
+                  className={`w-13 h-13 rounded-2xl flex items-center justify-center font-bold text-white shadow-md transition-all cursor-pointer ${
+                    isSpeaking
+                      ? 'bg-gradient-to-tr from-teal-500 to-emerald-400 scale-105 ring-4 ring-emerald-400/40 animate-pulse'
+                      : isListening
+                      ? 'bg-gradient-to-tr from-emerald-600 to-teal-600 ring-2 ring-emerald-300 scale-105'
+                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                  }`}
+                >
                   {isSpeaking ? (
                     <Volume2 className="w-6 h-6 animate-bounce" />
                   ) : isListening ? (
                     <Mic className="w-6 h-6 text-white animate-pulse" />
                   ) : (
-                    <Bot className="w-6 h-6" />
+                    <MicOff className="w-6 h-6 text-slate-400" />
                   )}
-                </div>
+                </button>
                 {isListening && (
                   <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 ring-2 ring-slate-900 animate-ping" />
                 )}
               </div>
 
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-black uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
                     <Radio className="w-3.5 h-3.5 text-emerald-400 animate-spin-slow" />
-                    Kisan Voice Assistant (మొత్తం వాయిస్ అసిస్టెంట్)
+                    Kisan Voice Assistant • {getBCP47Tag(language)}
                   </span>
-                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                  <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
                     isSpeaking
                       ? 'bg-teal-500/30 text-teal-200 border border-teal-400/40'
                       : isListening
                       ? 'bg-emerald-500/30 text-emerald-200 border border-emerald-400/40'
                       : 'bg-slate-800 text-slate-400'
                   }`}>
-                    {isSpeaking ? '🗣️ Speaking Prompt...' : isListening ? '🎙️ Listening to You...' : 'Idle'}
+                    {isSpeaking ? '🗣️ Speaking Instructions...' : isListening ? '🎙️ Listening to You...' : 'Mic Ready'}
                   </span>
                 </div>
 
@@ -761,7 +852,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
               </div>
             </div>
 
-            {/* Quick Actions for Voice */}
+            {/* Quick Actions */}
             <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-center">
               <button
                 onClick={() => triggerStepVoicePrompt(step)}
@@ -774,7 +865,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
 
               <button
                 onClick={stopSpeech}
-                title="Stop current voice audio"
+                title="Stop audio"
                 className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-bold border border-white/10 flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 <VolumeX className="w-3.5 h-3.5" />
@@ -784,10 +875,10 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
 
           </div>
 
-          {/* Soundwave animation strip */}
+          {/* Soundwave animation */}
           <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-300">
             <span className="font-semibold text-emerald-300">
-              💡 {step === 1 ? 'Say crop name: "Paddy", "Cotton", "Wheat", "వరి"' : step === 2 ? 'Say quantity: "50 Quintals", "100", "వంద"' : step === 7 ? 'Say: "Confirm Booking" or "ఖరారు చేయండి"' : 'Say: "Next", "Back", or "Continue"'}
+              💡 {step === 1 ? 'Say: "Paddy", "Cotton", "వరి", "धान", "நெல்", "Wheat"' : step === 2 ? 'Say: "50 Quintals", "100", "వంద", "सौ"' : step === 7 ? 'Say: "Confirm Booking", "ఖరారు చేయండి"' : 'Say: "Next", "Back", "సరే"'}
             </span>
             <div className="flex items-center gap-1 h-3">
               <span className={`w-1 bg-emerald-400 rounded-full transition-all ${isSpeaking || isListening ? 'h-3 animate-pulse' : 'h-1'}`} />
@@ -860,13 +951,13 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
                 <span>{tr.selectCropTitle || 'Select Crop for Mandi Procurement'}</span>
               </h2>
               <p className="text-xs text-slate-500 mt-1 font-medium">
-                {tr.selectCropDesc || 'Choose or speak the crop you want to sell at official MSP rates.'}
+                {tr.selectCropDesc || 'Speak or choose the crop you want to sell at official MSP rates.'}
               </p>
             </div>
 
             {/* Quick voice hint chips */}
             <div className="flex items-center gap-1.5 flex-wrap">
-              {['Paddy (వరి)', 'Cotton (పత్తి)', 'Wheat (గోధుమలు)', 'Maize (మొక్కజొన్న)'].map((cHint) => (
+              {['Paddy (వరి / धान)', 'Cotton (పత్తి / कपास)', 'Wheat (గోధుమలు / गेहूं)', 'Maize (మొక్కజొన్న)'].map((cHint) => (
                 <button
                   key={cHint}
                   onClick={() => handleVoiceCommand(cHint.split(' ')[0])}
@@ -954,7 +1045,7 @@ export const SlotBookingWizard: React.FC<SlotBookingWizardProps> = ({ onBack, on
                 <span>{tr.enterQuantityTitle || 'Enter Harvest Quantity (Quintals)'}</span>
               </h2>
               <p className="text-xs text-slate-500 mt-1 font-medium">
-                {selectedCrop?.name} • 1 Quintal = 100 kg • Speak e.g. "50 Quintals" or "100"
+                {selectedCrop?.name} • 1 Quintal = 100 kg • Speak e.g. "50 Quintals", "100 Q", or "వంద"
               </p>
             </div>
 

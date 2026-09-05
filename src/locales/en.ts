@@ -238,5 +238,14 @@ export const en = {
   processing: 'Processing',
   completed: 'Completed',
   cancelled: 'Cancelled',
-  rescheduled: 'Rescheduled'
+  rescheduled: 'Rescheduled',
+
+  // Slot Booking Steps
+  stepCrop: 'Select Crop',
+  stepQuantity: 'Quantity',
+  stepLocation: 'Location',
+  stepEmail: 'Email Alert',
+  stepCenter: 'Mandi Center',
+  stepSlot: 'Time Slot',
+  stepReview: 'Confirm'
 };

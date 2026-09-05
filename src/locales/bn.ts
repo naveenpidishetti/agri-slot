@@ -1,0 +1,56 @@
+import { en } from './en';
+
+export const bn: typeof en = {
+  ...en,
+  appName: 'এগ্রিস্লট',
+  appTagline: 'কৃষকদের জন্য স্মার্ট মান্ডি স্লট বুকিং ও সারি ব্যবস্থাপনা',
+  allIndiaPortal: 'সর্বভারতীয় পোর্টাল',
+  dashboard: 'ড্যাশবোর্ড',
+  bookSlot: 'মান্ডি স্লট বুক করুন',
+  seedsFertilizerAI: 'বীজ ও সার AI',
+  pricePredictor: 'মূল্য পূর্বাভাস',
+  agritech: 'উন্নত কৃষি প্রযুক্তি',
+  cropDoctor: 'ফসল ডাক্তার AI',
+  calendar: 'বুকিং ক্যালেন্ডার',
+  token: 'আমার ডিজিটাল পাস',
+  history: 'বুকিং ইতিহাস',
+  profile: 'কৃষক প্রোফাইল',
+  helpDesk: 'সাহায্য ও সহায়তা কেন্দ্র',
+  login: 'সাইন ইন',
+  register: 'নিবন্ধন করুন',
+  logout: 'সাইন আউট',
+  switchRole: 'ভূমিকা পরিবর্তন',
+
+  pageTitles: {
+    dashboard: '🌾 কৃষক ড্যাশবোর্ড',
+    bookSlot: '📅 মান্ডি স্লট বুকিং',
+    cropAdvisory: '🌱 বীজ ও সার AI উপদেষ্টা',
+    pricePredictor: '📈 মূল্য পূর্বাভাস ও বাজার প্রবণতা',
+    agritech: '🚀 অত্যাধুনিক কৃষি প্রযুক্তি',
+    diseaseDoctor: '🩺 ফসল রোগ ডাক্তার AI',
+    calendar: '🗓️ বুকিং ক্যালেন্ডার',
+    profile: '👤 কৃষক প্রোফাইল',
+    tokenView: '🎟️ ডিজিটাল টোকেন পাস',
+    help: '📞 কিষাণ সহায়তা কেন্দ্র'
+  },
+  taglineHeader: 'AI-চালিত মান্ডি সময়সূচী এবং ফসলের স্বাস্থ্য',
+  openKisanAI: 'কিষাণ AI সহকারী',
+
+  welcomeFarmer: 'স্বাগতম, কৃষক বন্ধু!',
+  mandiWeather: 'মান্ডি আবহাওয়া',
+  sunny: '29°C • রৌদ্রোজ্জ্বল',
+  activeBookingTitle: 'বর্তমান সক্রিয় বুকিং',
+  noActiveBooking: 'বর্তমানে কোনো সক্রিয় বুকিং নেই।',
+  bookFirstSlot: 'স্লট বুক করুন',
+  produceAndQty: 'ফসল ও পরিমাণ',
+  procurementCenter: 'ক্রয় কেন্দ্র',
+  dateAndSlot: 'তারিখ ও সময়',
+
+  stepCrop: 'ফসল নির্বাচন',
+  stepQuantity: 'পরিমাণ',
+  stepLocation: 'স্থান',
+  stepEmail: 'ইমেল সতর্কতা',
+  stepCenter: 'মান্ডি কেন্দ্র',
+  stepSlot: 'সময় স্লট',
+  stepReview: 'নিশ্চিতকরণ'
+};

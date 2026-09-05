@@ -1,0 +1,56 @@
+import { en } from './en';
+
+export const pa: typeof en = {
+  ...en,
+  appName: 'ਐਗਰੀਸਲਾਟ',
+  appTagline: 'ਕਿਸਾਨਾਂ ਲਈ ਸਮਾਰਟ ਮੰਡੀ ਸਲਾਟ ਬੁਕਿੰਗ ਅਤੇ ਕਤਾਰ ਪ੍ਰਬੰਧਨ',
+  allIndiaPortal: 'ਆਲ ਇੰਡੀਆ ਪੋਰਟਲ',
+  dashboard: 'ਡੈਸ਼ਬੋਰਡ',
+  bookSlot: 'ਮੰਡੀ ਸਲਾਟ ਬੁੱਕ ਕਰੋ',
+  seedsFertilizerAI: 'ਬੀਜ ਅਤੇ ਖਾਦ AI',
+  pricePredictor: 'ਕੀਮਤ ਅਨੁਮਾਨ',
+  agritech: 'ਨਵੀਂ ਖੇਤੀ ਤਕਨਾਲੋਜੀ',
+  cropDoctor: 'ਫ਼ਸਲ ਡਾਕਟਰ AI',
+  calendar: 'ਬੁਕਿੰਗ ਕੈਲੰਡਰ',
+  token: 'ਮੇਰਾ ਡਿਜੀਟਲ ਪਾਸ',
+  history: 'ਬੁਕਿੰਗ ਇਤਿਹਾਸ',
+  profile: 'ਕਿਸਾਨ ਪ੍ਰੋਫਾਈਲ',
+  helpDesk: 'ਸਹਾਇਤਾ ਕੇਂਦਰ',
+  login: 'ਸਾਈਨ ਇਨ',
+  register: 'ਰਜਿਸਟਰ',
+  logout: 'ਸਾਈਨ ਆਊਟ',
+  switchRole: 'ਭੂਮਿਕਾ ਬਦਲੋ',
+
+  pageTitles: {
+    dashboard: '🌾 ਕਿਸਾਨ ਡੈਸ਼ਬੋਰਡ',
+    bookSlot: '📅 ਮੰਡੀ ਸਲਾਟ ਬੁਕਿੰਗ',
+    cropAdvisory: '🌱 ਬੀਜ ਅਤੇ ਖਾਦ AI ਸਲਾਹਕਾਰ',
+    pricePredictor: '📈 ਕੀਮਤ ਅਨੁਮਾਨ ਅਤੇ ਰੁਝਾਨ',
+    agritech: '🚀 ਆਧੁਨਿਕ ਖੇਤੀਬਾੜੀ ਤਕਨਾਲੋਜੀ',
+    diseaseDoctor: '🩺 ਫ਼ਸਲ ਰੋਗ ਡਾਕਟਰ AI',
+    calendar: '🗓️ ਬੁਕਿੰਗ ਕੈਲੰਡਰ',
+    profile: '👤 ਕਿਸਾਨ ਪ੍ਰੋਫਾਈਲ',
+    tokenView: '🎟️ ਡਿਜੀਟਲ ਟੋਕਨ ਪਾਸ',
+    help: '📞 ਕਿਸਾਨ ਸਹਾਇਤਾ ਕੇਂਦਰ'
+  },
+  taglineHeader: 'AI-ਸੰਚਾਲਿਤ ਮੰਡੀ ਸ਼ਡਿਊਲਿੰਗ ਅਤੇ ਫ਼ਸਲ ਸਿਹਤ',
+  openKisanAI: 'ਕਿਸਾਨ AI ਸਹਾਇਕ',
+
+  welcomeFarmer: 'ਜੀ ਆਇਆਂ ਨੂੰ, ਕਿਸਾਨ ਵੀਰੋ!',
+  mandiWeather: 'ਮੰਡੀ ਮੌਸਮ',
+  sunny: '29°C • ਧੁੱਪ',
+  activeBookingTitle: 'ਮੌਜੂਦਾ ਸਰਗਰਮ ਬੁਕਿੰਗ',
+  noActiveBooking: 'ਇਸ ਵੇਲੇ ਕੋਈ ਸਰਗਰਮ ਬੁਕਿੰਗ ਨਹੀਂ ਹੈ।',
+  bookFirstSlot: 'ਸਲਾਟ ਬੁੱਕ ਕਰੋ',
+  produceAndQty: 'ਫ਼ਸਲ ਅਤੇ ਮਾਤਰਾ',
+  procurementCenter: 'ਖਰੀਦ ਕੇਂਦਰ',
+  dateAndSlot: 'ਮਿਤੀ ਅਤੇ ਸਮਾਂ',
+
+  stepCrop: 'ਫ਼ਸਲ ਚੁਣੋ',
+  stepQuantity: 'ਮਾਤਰਾ',
+  stepLocation: 'ਸਥਾਨ',
+  stepEmail: 'ਈਮੇਲ ਚੇਤਾਵਨੀ',
+  stepCenter: 'ਮੰਡੀ ਕੇਂਦਰ',
+  stepSlot: 'ਸਮਾਂ ਸਲਾਟ',
+  stepReview: 'ਪੁਸ਼ਟੀ'
+};

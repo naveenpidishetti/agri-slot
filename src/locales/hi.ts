@@ -240,5 +240,14 @@ export const hi: typeof en = {
   processing: 'प्रक्रियाधीन',
   completed: 'सम्पन्न',
   cancelled: 'रद्द',
-  rescheduled: 'पुनर्निर्धारित'
+  rescheduled: 'पुनर्निर्धारित',
+
+  // Slot Booking Steps
+  stepCrop: 'फसल चुनें',
+  stepQuantity: 'मात्रा',
+  stepLocation: 'स्थान',
+  stepEmail: 'ईमेल अलर्ट',
+  stepCenter: 'मंडी केंद्र',
+  stepSlot: 'समय स्लॉट',
+  stepReview: 'पुष्टि करें'
 };

@@ -240,5 +240,14 @@ export const te: typeof en = {
   processing: 'పరిశీలనలో ఉంది',
   completed: 'పూర్తయింది',
   cancelled: 'రద్దు చేయబడింది',
-  rescheduled: 'రీషెడ్యూల్ చేయబడింది'
+  rescheduled: 'రీషెడ్యూల్ చేయబడింది',
+
+  // Slot Booking Steps
+  stepCrop: 'పంట ఎంపిక',
+  stepQuantity: 'దిగుబడి పరిమాణం',
+  stepLocation: 'ప్రాంతం',
+  stepEmail: 'ఈమెయిల్ సమాచారం',
+  stepCenter: 'కేంద్రం',
+  stepSlot: 'సమయం స్లాట్',
+  stepReview: 'ధృవీకరణ'
 };
